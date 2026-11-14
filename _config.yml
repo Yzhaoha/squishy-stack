@@ -1,0 +1,4 @@
+# GitHub Pages serves only the test build at the root
+exclude:
+  - poki
+  - tools

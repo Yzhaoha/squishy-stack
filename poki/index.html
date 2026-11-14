@@ -1,0 +1,1153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<script src="https://game-cdn.poki.com/scripts/v2/poki-sdk.js"></script>
+<title>Squishy Stack</title>
+<style>
+:root{--ink:#3b2a4a;--pink:#ff7aa8;--cream:#fff7ee;--mint:#6fd3b5;--gold:#ffc83d;--card:#fffdfb}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:#bfe6ff;font-family:"Nunito","Trebuchet MS",system-ui,sans-serif;color:var(--ink);user-select:none;-webkit-user-select:none;touch-action:none}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+[hidden]{display:none!important}
+.layer{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;z-index:5}
+.panel{background:var(--card);border-radius:28px;padding:22px 22px 18px;width:min(420px,100%);max-height:100%;overflow:auto;text-align:center;box-shadow:0 10px 0 #0002,0 20px 50px #0003;border:4px solid #fff}
+h1{white-space:nowrap;font-size:clamp(22px,8.5vw,42px);line-height:1;margin:4px 0 2px;color:var(--pink);letter-spacing:1px;text-shadow:0 3px 0 #c94a7c33;font-weight:900}
+h2{margin:2px 0 10px;font-size:26px;font-weight:900}
+.sub{margin:4px 0 12px;font-weight:700;opacity:.75;font-size:15px}
+.btn{display:block;width:100%;border:0;border-radius:18px;padding:14px 16px;margin:10px 0 0;font-weight:900;font-size:22px;font-family:inherit;color:#fff;background:var(--pink);box-shadow:0 6px 0 #c94a7c;cursor:pointer;transition:transform .08s}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 #c94a7c}
+.btn.sec{background:#8b7bd8;box-shadow:0 6px 0 #5f50ad;font-size:18px;padding:11px}
+.btn.gold{background:#ffb627;box-shadow:0 6px 0 #c98400}
+.btn[disabled]{filter:grayscale(1);opacity:.55;cursor:default}
+.row{display:flex;gap:10px}.row .btn{flex:1}
+.stat{display:flex;justify-content:space-around;margin:6px 0 4px;font-weight:900}
+.stat b{display:block;font-size:34px;color:var(--pink)}
+.stat span{font-size:13px;opacity:.7}
+.coins{font-weight:900;font-size:18px}
+.coins i{font-style:normal;display:inline-block;width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff6b0,#ffc83d 55%,#d99000);vertical-align:-3px;margin-right:4px;box-shadow:0 1px 0 #a66d00}
+.cards{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.card{flex:1 1 30%;min-width:110px;max-width:150px;background:#fff;border-radius:20px;padding:12px 8px;border:4px solid var(--c,#ddd);box-shadow:0 6px 0 var(--c,#ddd);cursor:pointer;transition:transform .1s}
+.card:hover{transform:translateY(-4px)}
+.card .ic{font-size:34px;line-height:1.1}
+.card .nm{font-weight:900;font-size:16px;margin:6px 0 4px;overflow-wrap:anywhere;hyphens:auto}
+.card .ds{font-size:12.5px;font-weight:700;opacity:.75;line-height:1.25}
+.card .k{display:inline-block;margin-top:6px;font-size:11px;font-weight:900;background:#0001;border-radius:6px;padding:1px 6px}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:8px 0}
+.cell{aspect-ratio:1;border-radius:14px;background:#f3eef7;display:flex;align-items:center;justify-content:center;position:relative}
+.cell canvas{position:static;width:100%;height:100%}
+.cell.r1{background:#e6f0ff}.cell.r2{background:#fff3cf}
+.cell.lock canvas{filter:brightness(0) opacity(.18)}
+.legend{font-size:12px;font-weight:800;opacity:.7}
+#box{width:180px;height:180px;margin:0 auto;position:relative}
+#box canvas{position:static;width:180px;height:180px}
+.lang{position:fixed;top:10px;right:10px;z-index:6;border:0;border-radius:12px;padding:6px 8px;font-weight:800;font-size:14px;font-family:inherit;background:#fffc;color:var(--ink)}
+.icon-btn{position:fixed;z-index:4;border:0;border-radius:50%;width:44px;height:44px;background:#fffc;font-size:20px;cursor:pointer;box-shadow:0 3px 0 #0002}
+#mute{top:10px;left:10px}
+#pauseB{top:62px;left:10px;font-size:18px}
+#adBlock{position:fixed;inset:0;z-index:30;background:transparent}
+.skill{position:fixed;z-index:4;bottom:18px;border:0;border-radius:22px;padding:10px 14px;font-weight:900;font-size:15px;font-family:inherit;background:#fff;color:var(--ink);box-shadow:0 5px 0 #0002;cursor:pointer;min-width:86px}
+.skill small{display:block;font-size:11px;opacity:.6}
+#skWave{left:14px}#skBlink{right:14px}
+.skill .n{color:var(--pink)}
+.btn{position:relative}
+.dot{position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:50%;background:#ff3b6b;border:3px solid #fff}
+.btn.mini{font-size:16px;padding:9px}
+.btn.ad{background:#3fbf88;box-shadow:0 6px 0 #2a8a60;font-size:18px}
+.tabs{display:flex;gap:6px;margin:0 0 8px;flex-wrap:wrap}
+.tab{flex:1;border:0;border-radius:12px;padding:8px 4px;hyphens:auto;overflow-wrap:anywhere;font-weight:900;font-family:inherit;font-size:13px;background:#f1ecf6;color:var(--ink);cursor:pointer;min-width:70px}
+.tab.on{background:var(--pink);color:#fff}.tab.lock{opacity:.5}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin:6px 0}
+.day{border-radius:12px;background:#f3eef7;padding:6px 2px;font-size:11px;font-weight:900}
+.day b{display:block;font-size:14px;margin-top:2px}.day.got{background:#d9f5e8;opacity:.7}.day.now{outline:3px solid var(--pink);background:#fff}
+.mis{display:flex;align-items:center;gap:10px;background:#f6f2fa;border-radius:16px;padding:10px;margin:8px 0;text-align:left}
+.mis .t{flex:1;font-weight:800;font-size:14px}.mis .rw{font-size:12px;opacity:.7}
+.bar{height:8px;border-radius:4px;background:#e5dcef;margin-top:6px;overflow:hidden}.bar i{display:block;height:100%;background:var(--mint)}
+.mis button{border:0;border-radius:12px;padding:9px 12px;font-weight:900;font-family:inherit;background:#ffb627;color:#fff;cursor:pointer;font-size:14px}
+.mis button[disabled]{background:#cfc6d8}
+.cell .st{position:absolute;bottom:1px;left:0;right:0;font-size:10px;color:#ffb627;font-weight:900;text-shadow:0 1px 0 #fff}
+.cell .sh{position:absolute;top:1px;right:3px;font-size:12px}
+.cell .q{font-weight:900;font-size:22px;color:#c9bcd8;position:absolute}
+.cell.r2:not(.lock){background:linear-gradient(135deg,#fff3cf,#ffe0f0,#dff3ff)}
+#boxNext{font-size:13px;font-weight:800;opacity:.7;min-height:18px;margin:6px 0 0}
+#tip{position:fixed;left:50%;top:30%;transform:translateX(-50%);z-index:4;max-width:min(360px,88vw);background:#fff;color:var(--ink);font-weight:900;font-size:18px;line-height:1.3;
+ padding:12px 16px;border-radius:18px;box-shadow:0 6px 0 #0002,0 10px 30px #0002;text-align:center;pointer-events:none;border:3px solid var(--pink);animation:tipIn .35s ease-out,tipBob 1.6s ease-in-out .35s infinite}
+#tip.up::before{content:"";position:absolute;left:50%;top:-13px;margin-left:-10px;border:10px solid transparent;border-top:0;border-bottom:12px solid var(--pink)}
+@keyframes tipIn{from{opacity:0;transform:translate(-50%,10px) scale(.9)}}
+@keyframes tipBob{50%{margin-top:-6px}}
+.pulse{animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(1.05);filter:brightness(1.1)}}
+.hintline{font-weight:900;color:var(--pink);margin:2px 0 8px}
+.rankline{display:inline-block;margin:0 0 4px;padding:5px 12px;border-radius:999px;background:#fff3c4;color:#8a5a00;font-weight:900;font-size:14px;cursor:pointer;border:0;font-family:inherit}
+.lblist{max-height:min(52vh,430px);overflow:auto;text-align:left;margin:4px 0}
+.lbr{display:flex;align-items:center;gap:8px;padding:5px 10px;border-radius:14px;margin:4px 0;background:#f6f2fa;font-weight:900;font-size:15px}
+.lbr .rk{width:30px;text-align:center;color:#8b7bd8;font-size:15px}.lbr canvas{width:40px;height:40px;position:static;flex:none}
+.lbr .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lbr .sc{color:var(--pink)}
+.lbr.me{background:#ffe3ef;outline:3px solid var(--pink)}.lbr.self{background:#eef6ff}
+@media (hover:none){.kbd{display:none}}
+#bPlay small,.btn small{display:block;font-size:13px;opacity:.9;font-weight:800}
+.icons{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:10px}
+.ib{border:0;border-radius:14px;background:#f1ecf6;padding:6px 2px 5px;font-family:inherit;font-weight:900;font-size:11px;color:var(--ink);position:relative;cursor:pointer;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ib b{display:block;font-size:22px;line-height:1.2}.ib .dot{top:-3px;right:-3px;width:14px;height:14px}
+.acts{display:grid;grid-template-columns:repeat(6,1fr);gap:0 10px}.acts .btn{grid-column:span 6}.acts .btn.h{grid-column:span 3}
+.flexp{display:flex;flex-direction:column}.flexp .scroll{flex:1 1 auto;min-height:0;overflow:auto}
+.goal{font-size:24px;font-weight:900;color:var(--pink);margin:2px 0 6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:2px 0 6px}
+.chip{background:#eef3ff;color:#4b5ea8;border-radius:999px;padding:3px 10px;font-size:13px;font-weight:900}
+.chip.st{background:#fff3c4;color:#8a5a00}.chip.st.got{background:#ffe08a}
+.boosts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:4px 0 2px}
+.bt{border:3px solid transparent;border-radius:16px;background:#f6f2fa;padding:6px 2px;font-family:inherit;font-weight:900;font-size:12px;color:var(--ink);cursor:pointer;position:relative}
+.bt b{display:block;font-size:24px}.bt.sel{border-color:var(--pink);background:#ffe3ef}.bt i{font-style:normal;color:#b47a00}
+.bt em{position:absolute;top:-6px;right:-4px;background:var(--pink);color:#fff;border-radius:999px;font-style:normal;font-size:11px;padding:1px 6px}
+.lvgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:8px 0;padding:4px}
+.lvb{aspect-ratio:1;border:0;border-radius:16px;background:#ffe3ef;font-weight:900;font-size:20px;color:var(--ink);font-family:inherit;box-shadow:0 4px 0 #e9b9cc;cursor:pointer;position:relative;padding:0;line-height:1.1}
+.lvb small{display:block;font-size:11px;color:#ffb627;letter-spacing:-1px}.lvb.boss{background:#fff3c4;box-shadow:0 4px 0 #e6cf80}
+.lvb.lock{background:#eee8f2;box-shadow:0 4px 0 #d8d0e0;color:#b9add0;cursor:default}.lvb.cur{outline:3px solid var(--pink);animation:pulse 1s ease-in-out infinite}
+.stars3{font-size:46px;letter-spacing:6px;line-height:1.1;margin:2px 0}
+.stars3 span{display:inline-block;color:#e5dcef}.stars3 span.on{color:#ffc83d;animation:starPop .45s both;text-shadow:0 3px 0 #d99000}
+@keyframes starPop{0%{transform:scale(.2) rotate(-40deg)}70%{transform:scale(1.25)}100%{transform:scale(1)}}
+.rew{font-weight:900;font-size:14px;color:#8a5a00;margin:2px 0}
+.shr{display:flex;align-items:center;gap:10px;background:#f6f2fa;border-radius:16px;padding:8px 10px;margin:6px 0;text-align:left}
+.shr .ic{font-size:30px}.shr .t{flex:1;font-weight:900;font-size:14px;min-width:0}.shr .t small{display:block;font-weight:700;opacity:.7;font-size:12px}
+.shr button,.sk button{border:0;border-radius:12px;padding:8px 10px;font-weight:900;font-family:inherit;background:#ffb627;color:#fff;cursor:pointer;font-size:13px;white-space:nowrap}
+.shr button[disabled],.sk button[disabled]{background:#cfc6d8;cursor:default}
+.skgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:6px 0}
+.sk{background:#f6f2fa;border-radius:16px;padding:6px;font-weight:900;font-size:13px}.sk canvas{position:static;width:100%;height:auto;display:block}
+.sk.on{outline:3px solid var(--pink);background:#ffe3ef}.sk{min-width:0}.sk button{white-space:normal;font-size:12px;width:100%;margin-top:3px}
+#stBack{grid-column:span 2}#stGo{grid-column:span 4}.sk button.use{background:#8b7bd8}
+@media (max-height:560px){h1{font-size:32px}.panel{padding:14px}.btn{padding:10px;font-size:19px;margin-top:8px}}
+@media (max-height:620px) and (min-aspect-ratio:4/3),(max-height:430px){
+ .panel{padding:10px 14px 10px;border-radius:22px}h1{font-size:28px}h2{font-size:20px;margin:0 0 6px}
+ #title .sub,#hero,.kbd{display:none}.coins{margin:4px 0;font-size:16px}
+ .btn{padding:8px 10px;font-size:17px;margin-top:6px;box-shadow:0 4px 0 #c94a7c}.btn.sec{font-size:15px;padding:7px;box-shadow:0 4px 0 #5f50ad}
+ .btn.gold{box-shadow:0 4px 0 #c98400}.btn.ad{box-shadow:0 4px 0 #2a8a60;font-size:15px}
+ #bPlay small{display:inline;margin-left:6px}.icons{margin-top:6px}.ib{padding:3px 2px}.ib b{font-size:18px}
+ .acts .btn.h2{grid-column:span 3}.acts .btn.h3{grid-column:span 2}
+ .stat b{font-size:24px}.stars3{font-size:32px}.goal{font-size:20px}
+ #boxL .panel{width:min(600px,100%);display:grid;grid-template-columns:150px 1fr;column-gap:14px;align-items:center}
+ #boxL h2,#boxL .tabs{grid-column:1/-1}#boxL #box{grid-column:1;grid-row:3/span 4}#boxL #boxS,#boxL .pair,#boxL #boxNext,#boxL #boxBack{grid-column:2}
+ #box,#box canvas{width:140px;height:140px}#boxS{min-height:0!important;margin:2px 0}.pair{display:flex;gap:10px}.pair .btn{flex:1}
+ .lvgrid{grid-template-columns:repeat(10,1fr);gap:6px}.lvb{font-size:15px;border-radius:12px}
+ .grid{grid-template-columns:repeat(8,1fr)}#collInfo{min-height:0!important}.skgrid{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .flexp{width:min(620px,100%)!important}.days{gap:3px}.day{padding:3px 1px}.mis{padding:6px;margin:4px 0}
+ .boosts{gap:6px}.bt{padding:3px 2px}.bt b{font-size:18px}.lblist{max-height:none}
+}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<button id="mute" class="icon-btn" aria-label="sound">🔊</button>
+<button id="pauseB" class="icon-btn" aria-label="pause" hidden>⏸</button>
+<select id="lang" class="lang" aria-label="language"></select>
+<div id="tip" hidden></div>
+<button id="skWave" class="skill" hidden></button>
+<button id="skBlink" class="skill" hidden></button>
+
+<div id="title" class="layer">
+  <div class="panel">
+    <h1 data-t="name"></h1>
+    <p class="sub" data-t="tag"></p>
+    <canvas id="hero" width="360" height="190" style="position:static;width:100%;max-width:300px;height:auto"></canvas>
+    <p class="coins"><i></i><span id="tCoins">0</span> · <span data-t="best"></span> <b id="tBest">0</b></p>
+    <button class="rankline" id="tRank"></button>
+    <button id="bPlay" class="btn"><span data-t="play"></span><small id="bPlayLv"></small></button>
+    <div class="row"><button id="bMap" class="btn sec mini">🗺️ <span data-t="map"></span></button><button id="bEndless" class="btn sec mini"></button></div>
+    <div class="icons">
+     <button class="ib" id="bShop"><b>🎁</b><span data-t="i_box"></span><em class="dot" id="dBox" hidden></em></button>
+     <button class="ib" id="bColl"><b>🎨</b><span data-t="i_coll"></span></button>
+     <button class="ib" id="bStore"><b>🛒</b><span data-t="i_shop"></span></button>
+     <button class="ib" id="bDaily"><b>📅</b><span data-t="i_daily"></span><em class="dot" id="dDaily" hidden></em></button>
+     <button class="ib" id="bMiss"><b>✅</b><span data-t="i_miss"></span><em class="dot" id="dMiss" hidden></em></button>
+    </div>
+    <p class="sub kbd" style="margin:12px 0 0;font-size:13px" data-t="how"></p>
+  </div>
+</div>
+
+<div id="pick" class="layer" hidden>
+  <div class="panel" style="width:min(520px,100%)">
+    <h2 id="pickT"></h2>
+    <p class="hintline" id="pickHint" hidden></p>
+    <div class="cards" id="cards"></div>
+  </div>
+</div>
+
+<div id="over" class="layer" hidden>
+  <div class="panel">
+    <h2 id="overT"></h2>
+    <p class="hintline" id="overHint" hidden></p>
+    <div class="stat"><div><b id="oFloor">0</b><span data-t="floors"></span></div><div><b id="oBest">0</b><span data-t="best"></span></div><div><b id="oCoin">0</b><span data-t="earned"></span></div></div>
+    <p class="sub" id="oNear" style="color:#ff5ca0;margin:2px 0"></p>
+    <button class="rankline" id="oRank"></button>
+    <p class="coins"><i></i><span id="oTotal">0</span></p>
+    <div class="acts">
+    <button id="oDouble" class="btn ad h2"></button>
+    <button id="oAgain" class="btn h2" data-t="again"></button>
+    <button id="oBox" class="btn gold h3"></button>
+    <button id="oColl" class="btn sec h h3" data-t="coll"></button><button id="oHome" class="btn sec h h3" data-t="home"></button>
+    </div>
+  </div>
+</div>
+
+<div id="boxL" class="layer" hidden>
+  <div class="panel">
+    <h2 id="boxT"></h2>
+    <div class="tabs" id="boxTabs"></div>
+    <div id="box"><canvas id="boxCv" width="360" height="360"></canvas></div>
+    <p class="sub" id="boxS" style="min-height:42px"></p>
+    <div class="pair"><button id="boxGo" class="btn gold"></button>
+    <button id="boxAd" class="btn ad"></button></div>
+    <p id="boxNext"></p>
+    <button id="boxBack" class="btn sec" data-t="back"></button>
+  </div>
+</div>
+
+<div id="collL" class="layer" hidden>
+  <div class="panel flexp" style="width:min(460px,100%)">
+    <h2 data-t="coll"></h2>
+    <div class="tabs" id="collTabs"></div>
+    <p class="legend" id="collN"></p>
+    <div class="scroll"><div class="grid" id="grid"></div></div>
+    <p class="legend" id="setReward"></p>
+    <div class="tabs" id="skins"></div>
+    <p class="sub" id="collInfo" style="min-height:40px;font-size:14px"></p>
+    <button id="collBack" class="btn sec" data-t="back"></button>
+  </div>
+</div>
+
+<div id="dailyL" class="layer" hidden><div class="panel" style="width:min(460px,100%)">
+  <h2 data-t="daily"></h2><p class="sub" id="dailyS"></p><div class="days" id="days"></div>
+  <button id="dailyGo" class="btn gold"></button><button id="dailyBack" class="btn sec" data-t="back"></button></div></div>
+<div id="missL" class="layer" hidden><div class="panel flexp">
+  <h2 data-t="missions"></h2><p class="sub" data-t="missSub"></p><div id="missList" class="scroll"></div>
+  <button id="missBack" class="btn sec" data-t="back"></button></div></div>
+<div id="revL" class="layer" hidden><div class="panel">
+  <h2 data-t="revT"></h2><p class="sub" id="revS"></p>
+  <button id="revGo" class="btn ad"></button><button id="revNo" class="btn sec"></button></div></div>
+<div id="lbL" class="layer" hidden><div class="panel flexp" style="width:min(420px,100%)">
+  <h2 data-t="lb"></h2><div class="tabs" id="lbTabs"></div><p class="legend" data-t="lbReset"></p><div id="lbList" class="lblist scroll"></div>
+  <button id="lbBack" class="btn sec" data-t="back"></button></div></div>
+<div id="startL" class="layer" hidden><div class="panel">
+  <p class="legend" id="stChap" style="margin:0"></p><h2 id="stT"></h2>
+  <p class="goal" id="stGoal"></p><div class="chips" id="stRules"></div><div class="chips" id="stStars"></div>
+  <p class="legend" data-t="boost" style="margin:4px 0 0"></p><div class="boosts" id="stBoost"></div>
+  <div class="acts"><button id="stBack" class="btn sec" data-t="back"></button><button id="stGo" class="btn" data-t="go"></button></div></div></div>
+<div id="lvEnd" class="layer" hidden><div class="panel">
+  <h2 id="leT"></h2><div class="stars3" id="leStars"></div><p class="hintline" id="leHint" hidden></p>
+  <p class="sub" id="leSub" style="margin:2px 0"></p><div class="rew" id="leRew"></div><p class="coins"><i></i><span id="leTotal">0</span></p>
+  <div class="acts"><button id="leDouble" class="btn ad h2"></button><button id="leNext" class="btn h2"></button>
+  <button id="leBox" class="btn gold h3"></button><button id="leMap" class="btn sec h h3" data-t="map"></button><button id="leHome" class="btn sec h h3" data-t="home"></button></div></div></div>
+<div id="mapL" class="layer" hidden><div class="panel flexp" style="width:min(460px,100%)">
+  <h2 data-t="map"></h2><div class="tabs" id="mapTabs"></div><p class="legend" id="mapStars"></p><div class="scroll"><div class="lvgrid" id="lvGrid"></div></div>
+  <button id="mapBack" class="btn sec" data-t="back"></button></div></div>
+<div id="shopL" class="layer" hidden><div class="panel flexp" style="width:min(460px,100%)">
+  <h2 data-t="shop"></h2><p class="coins" style="margin:0 0 6px"><i></i><span id="shCoins">0</span></p><div class="tabs" id="shTabs"></div><div id="shList" class="scroll"></div>
+  <button id="shBack" class="btn sec" data-t="back"></button></div></div>
+<div id="pauseL" class="layer" hidden style="background:#0005;z-index:8"><div class="panel"><h2 data-t="paused"></h2><button id="pzGo" class="btn" data-t="resume"></button><button id="pzHome" class="btn sec" data-t="home"></button></div></div>
+<div id="adBlock" hidden></div>
+<div id="adL" class="layer" hidden style="background:#000c;z-index:9"><div class="panel"><h2>📺</h2><p class="sub" data-t="adTest"></p></div></div>
+
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+/* ================= text ================= */
+const TXT={
+en:{"paused":"Paused","resume":"Resume","lvN":"Level {n}","chapN":"Chapter {n}","map":"Levels","endless":"Endless","endlessLock":"Clear level 5 to unlock","goal":"Stack {n} floors","r_wind":"Windy","r_fast":"Fast hook","r_narrow":"Narrow cushion","r_drops":"Only {n} squishies","r_hearts":"Only {n} hearts","st1":"Clear","st2":"No hearts lost","st3":"{n} PERFECTs","go":"GO!","boost":"Boosters","win":"Level clear!","fail":"So close!","failLeft":"Only {n} floors to go!","failDrops":"Out of squishies!","next":"Next level","retry":"Try again","firstClr":"First clear +{c}","newStar":"Stars +{c}","left":"{n} left","shop":"Shop","tabBases":"Cushions","buy":"Buy","equip":"Use","using":"In use","needSet":"Complete {r}","b_heart":"Start with +1 heart","b_blink":"Start with 2 Blinks","b_wave":"Start with 2 Shockwaves","b_glue":"Tower wobbles less","sk_melon":"Watermelon","sk_cookie":"Cookie","sk_cloud2":"Cloud","sk_rainbow":"Rainbow","allClear":"All levels cleared!","serLock2":"🔒 Clear level {n}","i_box":"Boxes","i_coll":"Album","i_shop":"Shop","i_daily":"Daily","i_miss":"Tasks","goalShort":"Goal","lb":"Leaderboard","lbWeek":"This week","lbAll":"All time","lbYou":"You","lbNext":"Next to beat","lbPass":"Passed {n}!","lbPassN":"Passed {n} this run","lbRank":"#{n} this week","lbReset":"Beat the squishies! Resets every Monday.","lbWB":"Week best","lbAB":"All-time best","lbFirst":"You’re #1 this week!","tut1":"👆 Tap when the squishy is right above the tower!","tut2":"Watch the dotted line — tap when it turns green!","tut3":"PERFECT! Perfect drops calm the wobble.","tut4":"⬆ This is the wobble bar. If it fills up, the tower falls!","tut5":"Missed! You have 3 hearts — lose them all and the run ends.","tut6":"Every 10 floors you get to pick a power!","tut7":"Your first blind box is free — open it!","daily":"Daily gift","missions":"Missions","missSub":"New missions every day","claim":"Claim","dayN":"Day {n}","dailyS":"Come back every day! Day 5 and day 7 give free blind boxes.","dailyGot":"Come back tomorrow!","dailyBox":"Box","freeBox":"Free box!","boxFree":"🎁 Open free box","boxNextIn":"Next free box in {t}","boxAd":"📺 Free box ({n} left today)","boxAdNone":"No more ad boxes today","ser_pals":"Squishy Pals","ser_cafe":"Sweet Café","ser_dream":"Dreamy Night","serLock":"🔒 Reach floor {n}","setDone":"Series complete! Unlocked: {r}","setTodo":"Complete the series to unlock: {r}","sk_pink":"Pink cushion","sk_garden":"Garden cushion","sk_cake":"Cake plate","sk_moon":"Moon cushion","shiny":"✨ SHINY! ✨","starUp":"{n} again → ★{s}  (+{s} coin per drop)","starMax":"{n} is ★★★ already — +{c} coins","revT":"One more chance?","revS":"Keep going from floor {n}","revGo":"📺 Watch an ad to continue","noThanks":"No thanks ({n})","adTest":"Ad goes here (the test build skips ads)","double":"📺 Double coins (+{c})","near":"Only {n} floors from your best!","m_floor":"Reach floor {n} in one run","m_perf":"Make {n} PERFECT drops","m_combo":"Hit a x{n} combo","m_runs":"Play {n} runs","m_box":"Open {n} blind boxes","m_cafe":"Stack {n} Sweet Café squishies","m_pals":"Stack {n} Squishy Pals","m_dream":"Stack {n} Dreamy Night squishies","s_shiba":"Shiba","s_rpanda":"Red Panda","s_shark":"Shark","s_sloth":"Sloth","s_dino":"Dino","s_oni":"Rice Ball","s_sushi":"Sushi","s_boba":"Bubble Tea","s_donut":"Donut","s_pud":"Pudding","s_berry":"Strawberry","s_rdonut":"Rainbow Donut","s_ghost":"Ghost","s_cloud":"Cloud","s_mush":"Mushroom","s_bat":"Bat","s_bunny":"Moon Bunny","s_uni":"Unicorn","s_dragon":"Baby Dragon","name":"Squishy Stack","tag":"Drop the squishies. Build the wobbliest tower in the world!","play":"PLAY","coll":"Collection","openBox":"Blind box","best":"Best","how":"Tap / Space to drop · S shockwave · D blink · Esc ⏸","floors":"Floors","earned":"Coins","again":"Play again","home":"Home","back":"Back","over":"Tower down!","overTop":"It toppled!","newBest":"New best!","pick":"Floor {n}! Pick a power","boxCost":"Open box · {c}","boxTitle":"Blind box","boxNeed":"Need {c} coins — play a run!","boxTap":"Tap the box!","boxNew":"NEW! {n}","boxDup":"{n} again… +{c} coins back","rar0":"Common","rar1":"Rare","rar2":"SECRET","collN":"{a} / {b} found","locked":"??? — find it in a blind box","perfect":"PERFECT","combo":"COMBO x{n}","miss":"Oops!","wobbly":"WOBBLY!","wind":"Wind","z0":"Park","z1":"Rooftops","z2":"Clouds","z3":"Sunset","z4":"Space","wave":"Shockwave","blink":"Blink","c_mag":"Magnet","d_mag":"Drops drift toward the middle","c_glue":"Sticky Glue","d_glue":"Tower wobbles 15% less","c_slow":"Lazy Hook","d_slow":"Hook swings slower","c_heart":"Cushion","d_heart":"+1 heart","c_sticky":"Grippy Paws","d_sticky":"Catch drops that hang further off","c_wave":"Shockwave","d_wave":"+2 charges: calm the wobble (S)","c_blink":"Blink","d_blink":"+2 charges: next drop lands dead center (D)","c_aura":"Aura","d_aura":"Perfect drops give double coins","c_wide":"Bullseye","d_wide":"Bigger PERFECT zone","c_snack":"Snack","d_snack":"+15 coins","t_heavy":"Heavy: wobbles the tower less","t_sticky":"Sticky: hard to miss","t_fluffy":"Fluffy: bigger PERFECT zone","t_wide":"Wide: easy to land on","t_bouncy":"Bouncy: +2 coins","t_gold":"Secret: triple coins","t_none":"Classic squish","s_capy":"Capybara","s_dump":"Dumpling","s_axo":"Axolotl","s_cro":"Croissant","s_cow":"Fluffy Cow","s_mochi":"Mochi","s_frog":"Frog","s_bun":"Bun","s_peng":"Penguin","s_cat":"Cat","s_jelly":"Jelly","s_bear":"Bear","s_toast":"Toast","s_gcapy":"Golden Capybara","s_cosmo":"Cosmic Axo"},
+fr:{"paused":"Pause","resume":"Reprendre","lvN":"Niveau {n}","chapN":"Chapitre {n}","map":"Niveaux","endless":"Sans fin","endlessLock":"Finis le niveau 5 pour débloquer","goal":"Empile {n} étages","r_wind":"Vent","r_fast":"Crochet rapide","r_narrow":"Coussin étroit","r_drops":"Seulement {n} peluches","r_hearts":"Seulement {n} cœurs","st1":"Réussir","st2":"Aucun cœur perdu","st3":"{n} PARFAITS","go":"GO !","boost":"Bonus","win":"Niveau réussi !","fail":"Presque !","failLeft":"Plus que {n} étages !","failDrops":"Plus de peluches !","next":"Niveau suivant","retry":"Réessayer","firstClr":"Première victoire +{c}","newStar":"Étoiles +{c}","left":"Reste {n}","shop":"Boutique","tabBases":"Coussins","buy":"Acheter","equip":"Utiliser","using":"Équipé","needSet":"Complète {r}","b_heart":"Commence avec +1 cœur","b_blink":"Commence avec 2 téléports","b_wave":"Commence avec 2 ondes de choc","b_glue":"La tour tangue moins","sk_melon":"Pastèque","sk_cookie":"Cookie","sk_cloud2":"Nuage","sk_rainbow":"Arc-en-ciel","allClear":"Tous les niveaux réussis !","serLock2":"🔒 Finis le niveau {n}","i_box":"Boîtes","i_coll":"Album","i_shop":"Boutique","i_daily":"Cadeau","i_miss":"Missions","goalShort":"Objectif","lb":"Classement","lbWeek":"Cette semaine","lbAll":"Depuis toujours","lbYou":"Toi","lbNext":"Prochain à battre","lbPass":"{n} dépassé !","lbPassN":"{n} dépassés cette partie","lbRank":"{n}e cette semaine","lbReset":"Bats les peluches ! Remise à zéro chaque lundi.","lbWB":"Record de la semaine","lbAB":"Record absolu","lbFirst":"Tu es 1er cette semaine !","tut1":"👆 Touche quand la peluche est juste au-dessus de la tour !","tut2":"Regarde la ligne pointillée : touche quand elle devient verte !","tut3":"PARFAIT ! Les poses parfaites calment le tangage.","tut4":"⬆ Voici la barre de tangage. Si elle se remplit, la tour tombe !","tut5":"Raté ! Tu as 3 cœurs : perds-les tous et la partie est finie.","tut6":"Tous les 10 étages, tu choisis un pouvoir !","tut7":"Ta première boîte surprise est gratuite, ouvre-la !","daily":"Cadeau du jour","missions":"Missions","missSub":"De nouvelles missions chaque jour","claim":"Prendre","dayN":"Jour {n}","dailyS":"Reviens chaque jour ! Les jours 5 et 7 offrent une boîte surprise.","dailyGot":"Reviens demain !","dailyBox":"Boîte","freeBox":"Boîte gratuite !","boxFree":"🎁 Ouvrir la boîte gratuite","boxNextIn":"Prochaine boîte gratuite dans {t}","boxAd":"📺 Boîte gratuite (encore {n} aujourd’hui)","boxAdNone":"Plus de boîtes avec pub aujourd’hui","ser_pals":"Petits Potes","ser_cafe":"Café Sucré","ser_dream":"Nuit Féerique","serLock":"🔒 Atteins l’étage {n}","setDone":"Série complète ! Débloqué : {r}","setTodo":"Complète la série pour débloquer : {r}","sk_pink":"Coussin rose","sk_garden":"Coussin jardin","sk_cake":"Plat à gâteau","sk_moon":"Coussin lune","shiny":"✨ BRILLANT ! ✨","starUp":"Encore {n} → ★{s}  (+{s} pièce par pose)","starMax":"{n} est déjà ★★★ : +{c} pièces","revT":"Encore une chance ?","revS":"Continue depuis l’étage {n}","revGo":"📺 Regarder une pub pour continuer","noThanks":"Non merci ({n})","adTest":"Une pub s’affiche ici (la version test la saute)","double":"📺 Doubler les pièces (+{c})","near":"Plus que {n} étages pour ton record !","m_floor":"Atteins l’étage {n} en une partie","m_perf":"Fais {n} poses PARFAITES","m_combo":"Fais un combo x{n}","m_runs":"Joue {n} parties","m_box":"Ouvre {n} boîtes surprises","m_cafe":"Empile {n} peluches Café Sucré","m_pals":"Empile {n} Petits Potes","m_dream":"Empile {n} peluches Nuit Féerique","s_shiba":"Shiba","s_rpanda":"Panda roux","s_shark":"Requin","s_sloth":"Paresseux","s_dino":"Dino","s_oni":"Onigiri","s_sushi":"Sushi","s_boba":"Bubble tea","s_donut":"Donut","s_pud":"Flan","s_berry":"Fraise","s_rdonut":"Donut arc-en-ciel","s_ghost":"Fantôme","s_cloud":"Nuage","s_mush":"Champignon","s_bat":"Chauve-souris","s_bunny":"Lapin de lune","s_uni":"Licorne","s_dragon":"Bébé dragon","name":"Squishy Stack","tag":"Lâche les peluches. Construis la tour la plus bancale du monde !","play":"JOUER","coll":"Collection","openBox":"Boîte surprise","best":"Record","how":"Touche / Espace pour lâcher · S onde de choc · D téléport · Esc ⏸","floors":"Étages","earned":"Pièces","again":"Rejouer","home":"Accueil","back":"Retour","over":"La tour est tombée !","overTop":"Elle s’est écroulée !","newBest":"Nouveau record !","pick":"Étage {n} ! Choisis un pouvoir","boxCost":"Ouvrir · {c}","boxTitle":"Boîte surprise","boxNeed":"Il faut {c} pièces : joue une partie !","boxTap":"Touche la boîte !","boxNew":"NOUVEAU ! {n}","boxDup":"Encore {n}… +{c} pièces","rar0":"Commun","rar1":"Rare","rar2":"SECRET","collN":"{a} / {b} trouvés","locked":"??? Trouve-le dans une boîte surprise","perfect":"PARFAIT","combo":"COMBO x{n}","miss":"Oups !","wobbly":"ÇA TANGUE !","wind":"Vent","z0":"Parc","z1":"Toits","z2":"Nuages","z3":"Coucher de soleil","z4":"Espace","wave":"Onde de choc","blink":"Téléport","c_mag":"Aimant","d_mag":"Les chutes glissent vers le centre","c_glue":"Colle","d_glue":"La tour tangue 15 % de moins","c_slow":"Crochet paresseux","d_slow":"Le crochet balance moins vite","c_heart":"Coussin","d_heart":"+1 cœur","c_sticky":"Pattes collantes","d_sticky":"Rattrape les poses plus décalées","c_wave":"Onde de choc","d_wave":"+2 charges : calme le tangage (S)","c_blink":"Téléport","d_blink":"+2 charges : la prochaine pose tombe pile au centre (D)","c_aura":"Aura","d_aura":"Les poses parfaites rapportent double","c_wide":"Dans le mille","d_wide":"Zone PARFAIT plus grande","c_snack":"Goûter","d_snack":"+15 pièces","t_heavy":"Lourd : la tour tangue moins","t_sticky":"Collant : difficile à rater","t_fluffy":"Moelleux : zone PARFAIT plus grande","t_wide":"Large : facile à poser dessus","t_bouncy":"Rebondissant : +2 pièces","t_gold":"Secret : pièces x3","t_none":"Peluche classique","s_capy":"Capybara","s_dump":"Ravioli","s_axo":"Axolotl","s_cro":"Croissant","s_cow":"Vache poilue","s_mochi":"Mochi","s_frog":"Grenouille","s_bun":"Brioche vapeur","s_peng":"Pingouin","s_cat":"Chat","s_jelly":"Gelée","s_bear":"Ours","s_toast":"Toast","s_gcapy":"Capybara doré","s_cosmo":"Axolotl cosmique"},
+it:{"paused":"In pausa","resume":"Riprendi","lvN":"Livello {n}","chapN":"Capitolo {n}","map":"Livelli","endless":"Infinito","endlessLock":"Supera il livello 5 per sbloccare","goal":"Impila {n} piani","r_wind":"Vento","r_fast":"Gancio veloce","r_narrow":"Cuscino stretto","r_drops":"Solo {n} morbidosi","r_hearts":"Solo {n} cuori","st1":"Supera","st2":"Nessun cuore perso","st3":"{n} PERFETTI","go":"VIA!","boost":"Potenziamenti","win":"Livello superato!","fail":"Quasi!","failLeft":"Mancano solo {n} piani!","failDrops":"Morbidosi finiti!","next":"Prossimo livello","retry":"Riprova","firstClr":"Prima vittoria +{c}","newStar":"Stelle +{c}","left":"Ne restano {n}","shop":"Negozio","tabBases":"Cuscini","buy":"Compra","equip":"Usa","using":"In uso","needSet":"Completa {r}","b_heart":"Inizia con +1 cuore","b_blink":"Inizia con 2 teletrasporti","b_wave":"Inizia con 2 onde d’urto","b_glue":"La torre dondola meno","sk_melon":"Anguria","sk_cookie":"Biscotto","sk_cloud2":"Nuvola","sk_rainbow":"Arcobaleno","allClear":"Tutti i livelli superati!","serLock2":"🔒 Supera il livello {n}","i_box":"Scatole","i_coll":"Album","i_shop":"Negozio","i_daily":"Regalo","i_miss":"Missioni","goalShort":"Obiettivo","lb":"Classifica","lbWeek":"Questa settimana","lbAll":"Di sempre","lbYou":"Tu","lbNext":"Prossimo da battere","lbPass":"Superato {n}!","lbPassN":"Superati {n} in questa partita","lbRank":"{n}° questa settimana","lbReset":"Batti i morbidosi! Si azzera ogni lunedì.","lbWB":"Record settimanale","lbAB":"Record assoluto","lbFirst":"Sei 1° questa settimana!","tut1":"👆 Tocca quando il morbidoso è proprio sopra la torre!","tut2":"Guarda la linea tratteggiata: tocca quando diventa verde!","tut3":"PERFETTO! I colpi perfetti calmano il dondolio.","tut4":"⬆ Questa è la barra del dondolio. Se si riempie, la torre crolla!","tut5":"Mancato! Hai 3 cuori: se li perdi tutti la partita finisce.","tut6":"Ogni 10 piani scegli un potere!","tut7":"La tua prima scatola sorpresa è gratis, aprila!","daily":"Regalo del giorno","missions":"Missioni","missSub":"Nuove missioni ogni giorno","claim":"Riscuoti","dayN":"Giorno {n}","dailyS":"Torna ogni giorno! Il 5° e il 7° giorno c’è una scatola sorpresa.","dailyGot":"Torna domani!","dailyBox":"Scatola","freeBox":"Scatola gratis!","boxFree":"🎁 Apri la scatola gratis","boxNextIn":"Prossima scatola gratis tra {t}","boxAd":"📺 Scatola gratis (ancora {n} oggi)","boxAdNone":"Niente più scatole con pubblicità oggi","ser_pals":"Amici Morbidi","ser_cafe":"Pasticceria","ser_dream":"Notte Incantata","serLock":"🔒 Arriva al piano {n}","setDone":"Serie completa! Sbloccato: {r}","setTodo":"Completa la serie per sbloccare: {r}","sk_pink":"Cuscino rosa","sk_garden":"Cuscino giardino","sk_cake":"Piatto da torta","sk_moon":"Cuscino luna","shiny":"✨ BRILLANTE! ✨","starUp":"Di nuovo {n} → ★{s}  (+{s} moneta a pezzo)","starMax":"{n} è già ★★★: +{c} monete","revT":"Un’altra possibilità?","revS":"Continua dal piano {n}","revGo":"📺 Guarda una pubblicità per continuare","noThanks":"No, grazie ({n})","adTest":"Qui va la pubblicità (la versione di prova la salta)","double":"📺 Raddoppia le monete (+{c})","near":"Solo {n} piani dal tuo record!","m_floor":"Arriva al piano {n} in una partita","m_perf":"Fai {n} colpi PERFETTI","m_combo":"Fai una combo x{n}","m_runs":"Gioca {n} partite","m_box":"Apri {n} scatole sorpresa","m_cafe":"Impila {n} morbidosi Pasticceria","m_pals":"Impila {n} Amici Morbidi","m_dream":"Impila {n} morbidosi Notte Incantata","s_shiba":"Shiba","s_rpanda":"Panda rosso","s_shark":"Squalo","s_sloth":"Bradipo","s_dino":"Dino","s_oni":"Onigiri","s_sushi":"Sushi","s_boba":"Bubble tea","s_donut":"Ciambella","s_pud":"Budino","s_berry":"Fragola","s_rdonut":"Ciambella arcobaleno","s_ghost":"Fantasmino","s_cloud":"Nuvola","s_mush":"Fungo","s_bat":"Pipistrello","s_bunny":"Coniglio lunare","s_uni":"Unicorno","s_dragon":"Draghetto","name":"Squishy Stack","tag":"Lascia cadere i morbidosi. Costruisci la torre più traballante del mondo!","play":"GIOCA","coll":"Collezione","openBox":"Scatola sorpresa","best":"Record","how":"Tocca / Spazio per lasciare · S onda d’urto · D teletrasporto · Esc ⏸","floors":"Piani","earned":"Monete","again":"Gioca ancora","home":"Home","back":"Indietro","over":"Torre crollata!","overTop":"È caduta!","newBest":"Nuovo record!","pick":"Piano {n}! Scegli un potere","boxCost":"Apri · {c}","boxTitle":"Scatola sorpresa","boxNeed":"Servono {c} monete: fai una partita!","boxTap":"Tocca la scatola!","boxNew":"NUOVO! {n}","boxDup":"Di nuovo {n}… +{c} monete","rar0":"Comune","rar1":"Raro","rar2":"SEGRETO","collN":"{a} / {b} trovati","locked":"??? Trovalo in una scatola sorpresa","perfect":"PERFETTO","combo":"COMBO x{n}","miss":"Ops!","wobbly":"TRABALLA!","wind":"Vento","z0":"Parco","z1":"Tetti","z2":"Nuvole","z3":"Tramonto","z4":"Spazio","wave":"Onda d’urto","blink":"Teletrasporto","c_mag":"Calamita","d_mag":"I pezzi scivolano verso il centro","c_glue":"Colla","d_glue":"La torre dondola il 15% in meno","c_slow":"Gancio pigro","d_slow":"Il gancio oscilla più piano","c_heart":"Cuscino","d_heart":"+1 cuore","c_sticky":"Zampe appiccicose","d_sticky":"Prende anche i pezzi più storti","c_wave":"Onda d’urto","d_wave":"+2 cariche: calma il dondolio (S)","c_blink":"Teletrasporto","d_blink":"+2 cariche: il prossimo pezzo cade al centro (D)","c_aura":"Aura","d_aura":"I colpi perfetti danno monete doppie","c_wide":"Centro!","d_wide":"Zona PERFETTO più grande","c_snack":"Merenda","d_snack":"+15 monete","t_heavy":"Pesante: la torre dondola meno","t_sticky":"Appiccicoso: difficile mancarlo","t_fluffy":"Soffice: zona PERFETTO più grande","t_wide":"Largo: facile appoggiarci sopra","t_bouncy":"Rimbalzino: +2 monete","t_gold":"Segreto: monete x3","t_none":"Morbidoso classico","s_capy":"Capibara","s_dump":"Raviolo","s_axo":"Axolotl","s_cro":"Cornetto","s_cow":"Mucca pelosa","s_mochi":"Mochi","s_frog":"Rana","s_bun":"Panino al vapore","s_peng":"Pinguino","s_cat":"Gatto","s_jelly":"Gelatina","s_bear":"Orso","s_toast":"Toast","s_gcapy":"Capibara d’oro","s_cosmo":"Axolotl cosmico"},
+de:{"paused":"Pause","resume":"Weiter","lvN":"Level {n}","chapN":"Kapitel {n}","map":"Level","endless":"Endlos","endlessLock":"Schaffe Level 5 zum Freischalten","goal":"Staple {n} Stockwerke","r_wind":"Windig","r_fast":"Schneller Haken","r_narrow":"Schmales Kissen","r_drops":"Nur {n} Kuscheltiere","r_hearts":"Nur {n} Herzen","st1":"Geschafft","st2":"Kein Herz verloren","st3":"{n} PERFEKTE","go":"LOS!","boost":"Booster","win":"Level geschafft!","fail":"Knapp daneben!","failLeft":"Nur noch {n} Stockwerke!","failDrops":"Keine Kuscheltiere mehr!","next":"Nächstes Level","retry":"Nochmal","firstClr":"Erster Sieg +{c}","newStar":"Sterne +{c}","left":"Noch {n}","shop":"Shop","tabBases":"Kissen","buy":"Kaufen","equip":"Nutzen","using":"Aktiv","needSet":"Sammle {r}","b_heart":"Start mit +1 Herz","b_blink":"Start mit 2 Teleports","b_wave":"Start mit 2 Schockwellen","b_glue":"Turm wackelt weniger","sk_melon":"Wassermelone","sk_cookie":"Keks","sk_cloud2":"Wolke","sk_rainbow":"Regenbogen","allClear":"Alle Level geschafft!","serLock2":"🔒 Schaffe Level {n}","i_box":"Boxen","i_coll":"Album","i_shop":"Shop","i_daily":"Täglich","i_miss":"Missionen","goalShort":"Ziel","lb":"Rangliste","lbWeek":"Diese Woche","lbAll":"Allzeit","lbYou":"Du","lbNext":"Als Nächstes schlagen","lbPass":"{n} überholt!","lbPassN":"{n} überholt in dieser Runde","lbRank":"Platz {n} diese Woche","lbReset":"Schlag die Kuscheltiere! Neustart jeden Montag.","lbWB":"Wochenrekord","lbAB":"Allzeitrekord","lbFirst":"Du bist diese Woche Platz 1!","tut1":"👆 Tippe, wenn das Kuscheltier genau über dem Turm ist!","tut2":"Achte auf die gestrichelte Linie – tippe, wenn sie grün wird!","tut3":"PERFEKT! Perfekte Würfe beruhigen das Wackeln.","tut4":"⬆ Das ist die Wackelanzeige. Ist sie voll, fällt der Turm!","tut5":"Daneben! Du hast 3 Herzen – sind alle weg, ist die Runde vorbei.","tut6":"Alle 10 Stockwerke wählst du eine Kraft!","tut7":"Deine erste Überraschungsbox ist gratis – mach sie auf!","daily":"Tagesgeschenk","missions":"Missionen","missSub":"Jeden Tag neue Missionen","claim":"Holen","dayN":"Tag {n}","dailyS":"Komm jeden Tag wieder! An Tag 5 und 7 gibt es Gratis-Boxen.","dailyGot":"Komm morgen wieder!","dailyBox":"Box","freeBox":"Gratis-Box!","boxFree":"🎁 Gratis-Box öffnen","boxNextIn":"Nächste Gratis-Box in {t}","boxAd":"📺 Gratis-Box (heute noch {n})","boxAdNone":"Heute keine Werbe-Boxen mehr","ser_pals":"Kuschelfreunde","ser_cafe":"Süßes Café","ser_dream":"Traumnacht","serLock":"🔒 Erreiche Stockwerk {n}","setDone":"Serie komplett! Freigeschaltet: {r}","setTodo":"Vervollständige die Serie für: {r}","sk_pink":"Rosa Kissen","sk_garden":"Gartenkissen","sk_cake":"Tortenteller","sk_moon":"Mondkissen","shiny":"✨ GLITZER! ✨","starUp":"Wieder {n} → ★{s}  (+{s} Münze pro Wurf)","starMax":"{n} hat schon ★★★ – +{c} Münzen","revT":"Noch eine Chance?","revS":"Mach weiter ab Stockwerk {n}","revGo":"📺 Werbung ansehen und weiterspielen","noThanks":"Nein danke ({n})","adTest":"Hier kommt Werbung (die Testversion überspringt sie)","double":"📺 Münzen verdoppeln (+{c})","near":"Nur noch {n} Stockwerke bis zum Rekord!","m_floor":"Erreiche Stockwerk {n} in einer Runde","m_perf":"Schaffe {n} PERFEKTE Würfe","m_combo":"Schaffe eine x{n}-Kombo","m_runs":"Spiele {n} Runden","m_box":"Öffne {n} Überraschungsboxen","m_cafe":"Staple {n} Süßes-Café-Tiere","m_pals":"Staple {n} Kuschelfreunde","m_dream":"Staple {n} Traumnacht-Tiere","s_shiba":"Shiba","s_rpanda":"Roter Panda","s_shark":"Hai","s_sloth":"Faultier","s_dino":"Dino","s_oni":"Reisbällchen","s_sushi":"Sushi","s_boba":"Bubble Tea","s_donut":"Donut","s_pud":"Pudding","s_berry":"Erdbeere","s_rdonut":"Regenbogen-Donut","s_ghost":"Geist","s_cloud":"Wolke","s_mush":"Pilz","s_bat":"Fledermaus","s_bunny":"Mondhase","s_uni":"Einhorn","s_dragon":"Babydrache","name":"Squishy Stack","tag":"Lass die Kuscheltiere fallen. Bau den wackeligsten Turm der Welt!","play":"SPIELEN","coll":"Sammlung","openBox":"Überraschungsbox","best":"Rekord","how":"Tippen / Leertaste zum Fallenlassen · S Schockwelle · D Teleport · Esc ⏸","floors":"Stockwerke","earned":"Münzen","again":"Nochmal","home":"Start","back":"Zurück","over":"Turm gefallen!","overTop":"Umgekippt!","newBest":"Neuer Rekord!","pick":"Stockwerk {n}! Wähle eine Kraft","boxCost":"Öffnen · {c}","boxTitle":"Überraschungsbox","boxNeed":"Du brauchst {c} Münzen – spiel eine Runde!","boxTap":"Tippe auf die Box!","boxNew":"NEU! {n}","boxDup":"Wieder {n}… +{c} Münzen","rar0":"Normal","rar1":"Selten","rar2":"GEHEIM","collN":"{a} / {b} gefunden","locked":"??? Finde es in einer Überraschungsbox","perfect":"PERFEKT","combo":"KOMBO x{n}","miss":"Hoppla!","wobbly":"WACKELIG!","wind":"Wind","z0":"Park","z1":"Dächer","z2":"Wolken","z3":"Sonnenuntergang","z4":"Weltall","wave":"Schockwelle","blink":"Teleport","c_mag":"Magnet","d_mag":"Würfe driften zur Mitte","c_glue":"Klebstoff","d_glue":"Turm wackelt 15 % weniger","c_slow":"Fauler Haken","d_slow":"Der Haken schwingt langsamer","c_heart":"Polster","d_heart":"+1 Herz","c_sticky":"Klebepfoten","d_sticky":"Fängt auch schiefe Würfe","c_wave":"Schockwelle","d_wave":"+2 Ladungen: stoppt das Wackeln (S)","c_blink":"Teleport","d_blink":"+2 Ladungen: nächster Wurf landet genau mittig (D)","c_aura":"Aura","d_aura":"Perfekte Würfe geben doppelt Münzen","c_wide":"Volltreffer","d_wide":"Größere PERFEKT-Zone","c_snack":"Snack","d_snack":"+15 Münzen","t_heavy":"Schwer: Turm wackelt weniger","t_sticky":"Klebrig: schwer zu verfehlen","t_fluffy":"Flauschig: größere PERFEKT-Zone","t_wide":"Breit: leicht zu treffen","t_bouncy":"Hüpfig: +2 Münzen","t_gold":"Geheim: dreifach Münzen","t_none":"Klassisch knautschig","s_capy":"Wasserschwein","s_dump":"Teigtasche","s_axo":"Axolotl","s_cro":"Croissant","s_cow":"Zottelkuh","s_mochi":"Mochi","s_frog":"Frosch","s_bun":"Dampfbrötchen","s_peng":"Pinguin","s_cat":"Katze","s_jelly":"Wackelpudding","s_bear":"Bär","s_toast":"Toast","s_gcapy":"Goldenes Wasserschwein","s_cosmo":"Kosmo-Axolotl"},
+es:{"paused":"En pausa","resume":"Continuar","lvN":"Nivel {n}","chapN":"Capítulo {n}","map":"Niveles","endless":"Infinito","endlessLock":"Supera el nivel 5 para desbloquear","goal":"Apila {n} pisos","r_wind":"Viento","r_fast":"Gancho rápido","r_narrow":"Cojín estrecho","r_drops":"Solo {n} peluches","r_hearts":"Solo {n} corazones","st1":"Superar","st2":"Sin perder corazones","st3":"{n} PERFECTOS","go":"¡YA!","boost":"Potenciadores","win":"¡Nivel superado!","fail":"¡Casi!","failLeft":"¡Solo faltan {n} pisos!","failDrops":"¡Sin peluches!","next":"Siguiente nivel","retry":"Reintentar","firstClr":"Primera victoria +{c}","newStar":"Estrellas +{c}","left":"Quedan {n}","shop":"Tienda","tabBases":"Cojines","buy":"Comprar","equip":"Usar","using":"En uso","needSet":"Completa {r}","b_heart":"Empieza con +1 corazón","b_blink":"Empieza con 2 teletransportes","b_wave":"Empieza con 2 ondas expansivas","b_glue":"La torre se tambalea menos","sk_melon":"Sandía","sk_cookie":"Galleta","sk_cloud2":"Nube","sk_rainbow":"Arcoíris","allClear":"¡Todos los niveles superados!","serLock2":"🔒 Supera el nivel {n}","i_box":"Cajas","i_coll":"Álbum","i_shop":"Tienda","i_daily":"Regalo","i_miss":"Misiones","goalShort":"Meta","lb":"Clasificación","lbWeek":"Esta semana","lbAll":"Histórico","lbYou":"Tú","lbNext":"Próximo a superar","lbPass":"¡Superaste a {n}!","lbPassN":"Superaste a {n} en esta partida","lbRank":"N.º {n} esta semana","lbReset":"¡Supera a los blanditos! Se reinicia cada lunes.","lbWB":"Récord semanal","lbAB":"Récord histórico","lbFirst":"¡Eres el n.º 1 esta semana!","tut1":"👆 ¡Toca cuando el peluche esté justo encima de la torre!","tut2":"Mira la línea punteada: ¡toca cuando se ponga verde!","tut3":"¡PERFECTO! Las caídas perfectas calman el bamboleo.","tut4":"⬆ Esta es la barra de bamboleo. ¡Si se llena, la torre se cae!","tut5":"¡Fallaste! Tienes 3 corazones: si los pierdes todos, se acaba la partida.","tut6":"¡Cada 10 pisos eliges un poder!","tut7":"¡Tu primera caja sorpresa es gratis, ábrela!","daily":"Regalo diario","missions":"Misiones","missSub":"Misiones nuevas cada día","claim":"Recoger","dayN":"Día {n}","dailyS":"¡Vuelve cada día! Los días 5 y 7 regalan cajas sorpresa.","dailyGot":"¡Vuelve mañana!","dailyBox":"Caja","freeBox":"¡Caja gratis!","boxFree":"🎁 Abrir caja gratis","boxNextIn":"Próxima caja gratis en {t}","boxAd":"📺 Caja gratis (quedan {n} hoy)","boxAdNone":"No quedan cajas con anuncio hoy","ser_pals":"Amigos Blanditos","ser_cafe":"Café Dulce","ser_dream":"Noche Mágica","serLock":"🔒 Llega al piso {n}","setDone":"¡Serie completa! Desbloqueado: {r}","setTodo":"Completa la serie para desbloquear: {r}","sk_pink":"Cojín rosa","sk_garden":"Cojín jardín","sk_cake":"Plato de tarta","sk_moon":"Cojín luna","shiny":"✨ ¡BRILLANTE! ✨","starUp":"{n} otra vez → ★{s}  (+{s} moneda por caída)","starMax":"{n} ya tiene ★★★: +{c} monedas","revT":"¿Otra oportunidad?","revS":"Sigue desde el piso {n}","revGo":"📺 Ver un anuncio para seguir","noThanks":"No, gracias ({n})","adTest":"Aquí va un anuncio (la versión de prueba lo salta)","double":"📺 Doblar monedas (+{c})","near":"¡Solo {n} pisos para tu récord!","m_floor":"Llega al piso {n} en una partida","m_perf":"Haz {n} caídas PERFECTAS","m_combo":"Logra un combo x{n}","m_runs":"Juega {n} partidas","m_box":"Abre {n} cajas sorpresa","m_cafe":"Apila {n} peluches de Café Dulce","m_pals":"Apila {n} Amigos Blanditos","m_dream":"Apila {n} peluches de Noche Mágica","s_shiba":"Shiba","s_rpanda":"Panda rojo","s_shark":"Tiburón","s_sloth":"Perezoso","s_dino":"Dino","s_oni":"Onigiri","s_sushi":"Sushi","s_boba":"Té de burbujas","s_donut":"Dónut","s_pud":"Flan","s_berry":"Fresa","s_rdonut":"Dónut arcoíris","s_ghost":"Fantasmita","s_cloud":"Nube","s_mush":"Seta","s_bat":"Murciélago","s_bunny":"Conejo lunar","s_uni":"Unicornio","s_dragon":"Dragoncito","name":"Squishy Stack","tag":"Suelta los peluches. ¡Construye la torre más tambaleante del mundo!","play":"JUGAR","coll":"Colección","openBox":"Caja sorpresa","best":"Récord","how":"Toca / Espacio para soltar · S onda expansiva · D teletransporte · Esc ⏸","floors":"Pisos","earned":"Monedas","again":"Otra vez","home":"Inicio","back":"Volver","over":"¡Torre caída!","overTop":"¡Se derrumbó!","newBest":"¡Nuevo récord!","pick":"¡Piso {n}! Elige un poder","boxCost":"Abrir · {c}","boxTitle":"Caja sorpresa","boxNeed":"Necesitas {c} monedas: ¡juega una partida!","boxTap":"¡Toca la caja!","boxNew":"¡NUEVO! {n}","boxDup":"{n} otra vez… +{c} monedas","rar0":"Común","rar1":"Raro","rar2":"SECRETO","collN":"{a} / {b} encontrados","locked":"??? Búscalo en una caja sorpresa","perfect":"PERFECTO","combo":"COMBO x{n}","miss":"¡Ups!","wobbly":"¡SE TAMBALEA!","wind":"Viento","z0":"Parque","z1":"Azoteas","z2":"Nubes","z3":"Atardecer","z4":"Espacio","wave":"Onda expansiva","blink":"Teletransporte","c_mag":"Imán","d_mag":"Las caídas se desvían al centro","c_glue":"Pegamento","d_glue":"La torre se tambalea un 15 % menos","c_slow":"Gancho perezoso","d_slow":"El gancho se balancea más lento","c_heart":"Cojín","d_heart":"+1 corazón","c_sticky":"Patas pegajosas","d_sticky":"Atrapa caídas más desviadas","c_wave":"Onda expansiva","d_wave":"+2 cargas: calma el bamboleo (S)","c_blink":"Teletransporte","d_blink":"+2 cargas: la siguiente cae justo en el centro (D)","c_aura":"Aura","d_aura":"Las caídas perfectas dan el doble de monedas","c_wide":"Diana","d_wide":"Zona PERFECTO más grande","c_snack":"Merienda","d_snack":"+15 monedas","t_heavy":"Pesado: la torre se tambalea menos","t_sticky":"Pegajoso: difícil de fallar","t_fluffy":"Esponjoso: zona PERFECTO más grande","t_wide":"Ancho: fácil caer encima","t_bouncy":"Saltarín: +2 monedas","t_gold":"Secreto: monedas x3","t_none":"Blandito clásico","s_capy":"Capibara","s_dump":"Empanadilla","s_axo":"Ajolote","s_cro":"Cruasán","s_cow":"Vaca peluda","s_mochi":"Mochi","s_frog":"Rana","s_bun":"Bollito al vapor","s_peng":"Pingüino","s_cat":"Gato","s_jelly":"Gelatina","s_bear":"Oso","s_toast":"Tostada","s_gcapy":"Capibara dorado","s_cosmo":"Ajolote cósmico"},
+tr:{"paused":"Duraklatıldı","resume":"Devam et","lvN":"Bölüm {n}","chapN":"Kısım {n}","map":"Bölümler","endless":"Sonsuz","endlessLock":"Açmak için 5. bölümü geç","goal":"{n} kat diz","r_wind":"Rüzgârlı","r_fast":"Hızlı kanca","r_narrow":"Dar minder","r_drops":"Sadece {n} peluş","r_hearts":"Sadece {n} can","st1":"Geç","st2":"Can kaybetme","st3":"{n} MÜKEMMEL","go":"BAŞLA!","boost":"Güçlendirmeler","win":"Bölüm geçildi!","fail":"Az kaldı!","failLeft":"Sadece {n} kat kaldı!","failDrops":"Peluş bitti!","next":"Sonraki bölüm","retry":"Tekrar dene","firstClr":"İlk geçiş +{c}","newStar":"Yıldız +{c}","left":"{n} kaldı","shop":"Mağaza","tabBases":"Minderler","buy":"Al","equip":"Kullan","using":"Kullanılıyor","needSet":"{r} serisini tamamla","b_heart":"+1 canla başla","b_blink":"2 ışınlanmayla başla","b_wave":"2 şok dalgasıyla başla","b_glue":"Kule daha az sallanır","sk_melon":"Karpuz","sk_cookie":"Kurabiye","sk_cloud2":"Bulut","sk_rainbow":"Gökkuşağı","allClear":"Tüm bölümler geçildi!","serLock2":"🔒 {n}. bölümü geç","i_box":"Kutular","i_coll":"Albüm","i_shop":"Mağaza","i_daily":"Günlük","i_miss":"Görevler","goalShort":"Hedef","lb":"Sıralama","lbWeek":"Bu hafta","lbAll":"Tüm zamanlar","lbYou":"Sen","lbNext":"Sıradaki rakip","lbPass":"{n} geçildi!","lbPassN":"Bu oyunda {n} rakip geçildi","lbRank":"Bu hafta {n}.","lbReset":"Peluşları geç! Her pazartesi sıfırlanır.","lbWB":"Haftalık rekor","lbAB":"Tüm zamanların rekoru","lbFirst":"Bu hafta 1. sensin!","tut1":"👆 Peluş tam kulenin üstündeyken dokun!","tut2":"Kesikli çizgiye bak, yeşil olunca dokun!","tut3":"MÜKEMMEL! Mükemmel bırakışlar sallanmayı azaltır.","tut4":"⬆ Bu sallanma çubuğu. Dolarsa kule yıkılır!","tut5":"Kaçtı! 3 canın var, hepsi giderse oyun biter.","tut6":"Her 10 katta bir güç seçersin!","tut7":"İlk sürpriz kutun bedava, hemen aç!","daily":"Günlük hediye","missions":"Görevler","missSub":"Her gün yeni görevler","claim":"Al","dayN":"{n}. gün","dailyS":"Her gün gel! 5. ve 7. gün bedava sürpriz kutu var.","dailyGot":"Yarın tekrar gel!","dailyBox":"Kutu","freeBox":"Bedava kutu!","boxFree":"🎁 Bedava kutuyu aç","boxNextIn":"Sonraki bedava kutu: {t}","boxAd":"📺 Bedava kutu (bugün {n} kaldı)","boxAdNone":"Bugün reklamlı kutu kalmadı","ser_pals":"Pofuduk Dostlar","ser_cafe":"Tatlı Kafe","ser_dream":"Rüya Gecesi","serLock":"🔒 {n}. kata ulaş","setDone":"Seri tamam! Açıldı: {r}","setTodo":"Seriyi tamamla, aç: {r}","sk_pink":"Pembe minder","sk_garden":"Bahçe minderi","sk_cake":"Pasta tabağı","sk_moon":"Ay minderi","shiny":"✨ PARILTILI! ✨","starUp":"Yine {n} → ★{s}  (bırakış başına +{s} altın)","starMax":"{n} zaten ★★★: +{c} altın","revT":"Bir şans daha?","revS":"{n}. kattan devam et","revGo":"📺 Reklam izle, devam et","noThanks":"Hayır, teşekkürler ({n})","adTest":"Burada reklam çıkar (test sürümü atlar)","double":"📺 Altınları ikiye katla (+{c})","near":"Rekoruna sadece {n} kat kaldı!","m_floor":"Tek oyunda {n}. kata ulaş","m_perf":"{n} MÜKEMMEL bırakış yap","m_combo":"x{n} kombo yap","m_runs":"{n} oyun oyna","m_box":"{n} sürpriz kutu aç","m_cafe":"{n} Tatlı Kafe peluşu diz","m_pals":"{n} Pofuduk Dost diz","m_dream":"{n} Rüya Gecesi peluşu diz","s_shiba":"Shiba","s_rpanda":"Kızıl panda","s_shark":"Köpekbalığı","s_sloth":"Tembel hayvan","s_dino":"Dino","s_oni":"Pirinç topu","s_sushi":"Suşi","s_boba":"Baloncuk çayı","s_donut":"Donut","s_pud":"Puding","s_berry":"Çilek","s_rdonut":"Gökkuşağı donut","s_ghost":"Hayalet","s_cloud":"Bulut","s_mush":"Mantar","s_bat":"Yarasa","s_bunny":"Ay tavşanı","s_uni":"Tek boynuzlu at","s_dragon":"Yavru ejderha","name":"Squishy Stack","tag":"Peluşları bırak. Dünyanın en sallantılı kulesini yap!","play":"OYNA","coll":"Koleksiyon","openBox":"Sürpriz kutu","best":"Rekor","how":"Dokun / Boşluk ile bırak · S şok dalgası · D ışınlan · Esc ⏸","floors":"Kat","earned":"Altın","again":"Tekrar oyna","home":"Ana sayfa","back":"Geri","over":"Kule yıkıldı!","overTop":"Devrildi!","newBest":"Yeni rekor!","pick":"{n}. kat! Bir güç seç","boxCost":"Aç · {c}","boxTitle":"Sürpriz kutu","boxNeed":"{c} altın lazım, bir oyun oyna!","boxTap":"Kutuya dokun!","boxNew":"YENİ! {n}","boxDup":"Yine {n}… +{c} altın","rar0":"Sıradan","rar1":"Nadir","rar2":"GİZLİ","collN":"{a} / {b} bulundu","locked":"??? Sürpriz kutuda bul","perfect":"MÜKEMMEL","combo":"KOMBO x{n}","miss":"Hay aksi!","wobbly":"SALLANIYOR!","wind":"Rüzgâr","z0":"Park","z1":"Çatılar","z2":"Bulutlar","z3":"Gün batımı","z4":"Uzay","wave":"Şok dalgası","blink":"Işınlan","c_mag":"Mıknatıs","d_mag":"Bırakılanlar ortaya kayar","c_glue":"Yapışkan","d_glue":"Kule %15 daha az sallanır","c_slow":"Tembel kanca","d_slow":"Kanca daha yavaş sallanır","c_heart":"Minder","d_heart":"+1 can","c_sticky":"Yapışkan patiler","d_sticky":"Daha kaymış bırakışları da tutar","c_wave":"Şok dalgası","d_wave":"+2 hak: sallanmayı durdur (S)","c_blink":"Işınlan","d_blink":"+2 hak: sonraki tam ortaya düşer (D)","c_aura":"Aura","d_aura":"Mükemmel bırakışlar iki kat altın verir","c_wide":"Tam isabet","d_wide":"Daha büyük MÜKEMMEL alanı","c_snack":"Atıştırmalık","d_snack":"+15 altın","t_heavy":"Ağır: kule daha az sallanır","t_sticky":"Yapışkan: kaçırmak zor","t_fluffy":"Pofuduk: daha büyük MÜKEMMEL alanı","t_wide":"Geniş: üstüne koyması kolay","t_bouncy":"Zıpzıp: +2 altın","t_gold":"Gizli: 3 kat altın","t_none":"Klasik peluş","s_capy":"Kapibara","s_dump":"Mantı","s_axo":"Aksolotl","s_cro":"Kruvasan","s_cow":"Tüylü inek","s_mochi":"Moçi","s_frog":"Kurbağa","s_bun":"Buhar çöreği","s_peng":"Penguen","s_cat":"Kedi","s_jelly":"Jöle","s_bear":"Ayı","s_toast":"Tost","s_gcapy":"Altın kapibara","s_cosmo":"Kozmik aksolotl"},
+zh:{"paused":"已暂停","resume":"继续","lvN":"第 {n} 关","chapN":"第 {n} 章","map":"关卡","endless":"无尽挑战","endlessLock":"通过第 5 关解锁","goal":"叠到 {n} 层","r_wind":"有风","r_fast":"吊钩更快","r_narrow":"底座更窄","r_drops":"只有 {n} 只捏捏","r_hearts":"只有 {n} 颗心","st1":"过关","st2":"不掉心","st3":"完美 {n} 次","go":"开始！","boost":"道具","win":"过关！","fail":"差一点！","failLeft":"只差 {n} 层！","failDrops":"捏捏用完了！","next":"下一关","retry":"再试一次","firstClr":"首次通关 +{c}","newStar":"新星星 +{c}","left":"剩 {n} 只","shop":"商店","tabBases":"底座","buy":"买","equip":"使用","using":"使用中","needSet":"集齐{r}","b_heart":"开局 +1 颗心","b_blink":"开局带 2 次闪现","b_wave":"开局带 2 次震荡波","b_glue":"这局塔晃得少","sk_melon":"西瓜垫","sk_cookie":"饼干盘","sk_cloud2":"云朵垫","sk_rainbow":"彩虹垫","allClear":"全部通关啦！","serLock2":"🔒 通过第 {n} 关","i_box":"盲盒","i_coll":"图鉴","i_shop":"商店","i_daily":"签到","i_miss":"任务","goalShort":"目标","lb":"排行榜","lbWeek":"本周","lbAll":"历史","lbYou":"你","lbNext":"即将超越","lbPass":"超越 {n}！","lbPassN":"本局超越了 {n} 位","lbRank":"本周第 {n} 名","lbReset":"和捏捏们比一比！每周一重置。","lbWB":"本周最佳","lbAB":"历史最佳","lbFirst":"你是本周第一！","tut1":"👆 捏捏正好在塔上方时，点一下！","tut2":"看虚线，变绿的时候点！","tut3":"完美！完美落下能让塔不那么晃。","tut4":"⬆ 这是摇晃条，满了塔就会倒！","tut5":"没接住！你有 3 颗心，全掉光这局就结束。","tut6":"每叠 10 层，可以选一个能力！","tut7":"第一个盲盒免费，快去开！","daily":"每日礼物","missions":"每日任务","missSub":"每天都有新任务","claim":"领取","dayN":"第 {n} 天","dailyS":"每天来领！第 5 天和第 7 天送免费盲盒。","dailyGot":"明天再来！","dailyBox":"盲盒","freeBox":"免费盲盒！","boxFree":"🎁 开免费盲盒","boxNextIn":"下个免费盲盒：{t}","boxAd":"📺 看广告免费开（今天还剩 {n} 次）","boxAdNone":"今天的广告盲盒用完了","ser_pals":"软萌动物","ser_cafe":"甜品小铺","ser_dream":"梦幻夜空","serLock":"🔒 到 {n} 层解锁","setDone":"系列集齐！已解锁：{r}","setTodo":"集齐本系列解锁：{r}","sk_pink":"粉色软垫","sk_garden":"花园软垫","sk_cake":"蛋糕盘","sk_moon":"月亮软垫","shiny":"✨ 闪光款！✨","starUp":"又是{n} → ★{s}（每次落下 +{s} 金币）","starMax":"{n}已经满星 ★★★，退回 {c} 金币","revT":"再给一次机会？","revS":"从第 {n} 层接着叠","revGo":"📺 看广告继续","noThanks":"不了（{n}）","adTest":"这里会播放广告（测试版自动跳过）","double":"📺 金币翻倍（+{c}）","near":"差 {n} 层就破纪录了！","m_floor":"一局叠到第 {n} 层","m_perf":"完美落下 {n} 次","m_combo":"打出 {n} 连击","m_runs":"玩 {n} 局","m_box":"开 {n} 个盲盒","m_cafe":"叠 {n} 只甜品小铺的捏捏","m_pals":"叠 {n} 只软萌动物","m_dream":"叠 {n} 只梦幻夜空的捏捏","s_shiba":"柴犬","s_rpanda":"小熊猫","s_shark":"鲨鱼","s_sloth":"树懒","s_dino":"小恐龙","s_oni":"饭团","s_sushi":"寿司","s_boba":"珍珠奶茶","s_donut":"甜甜圈","s_pud":"布丁","s_berry":"草莓","s_rdonut":"彩虹甜甜圈","s_ghost":"小幽灵","s_cloud":"云朵","s_mush":"蘑菇","s_bat":"小蝙蝠","s_bunny":"月兔","s_uni":"独角兽","s_dragon":"小龙崽","name":"捏捏叠叠乐","tag":"放下捏捏，叠出世界上最晃的塔！","play":"开始","coll":"图鉴","openBox":"开盲盒","best":"最佳","how":"点击 / 空格 放下 · S 震荡波 · D 闪现 · Esc ⏸","floors":"层数","earned":"金币","again":"再来一局","home":"主页","back":"返回","over":"塔倒啦！","overTop":"晃塌了！","newBest":"新纪录！","pick":"第 {n} 层！选一个能力","boxCost":"开盲盒 · {c}","boxTitle":"盲盒","boxNeed":"需要 {c} 金币，先玩一局吧！","boxTap":"点一下盲盒！","boxNew":"新捏捏！{n}","boxDup":"又是{n}… 退回 {c} 金币","rar0":"普通","rar1":"稀有","rar2":"隐藏款","collN":"已收集 {a} / {b}","locked":"？？？ 在盲盒里找找看","perfect":"完美","combo":"连击 x{n}","miss":"哎呀！","wobbly":"要倒啦！","wind":"风","z0":"公园","z1":"屋顶","z2":"云端","z3":"晚霞","z4":"太空","wave":"震荡波","blink":"闪现","c_mag":"磁铁","d_mag":"落下时往中间吸","c_glue":"稳稳胶","d_glue":"塔晃动减少 15%","c_slow":"懒洋洋吊钩","d_slow":"吊钩摆得更慢","c_heart":"软垫","d_heart":"+1 颗心","c_sticky":"粘粘爪","d_sticky":"偏得多一点也能接住","c_wave":"震荡波","d_wave":"+2 次：让塔停止摇晃（S）","c_blink":"闪现","d_blink":"+2 次：下一只正中落下（D）","c_aura":"气场","d_aura":"完美落下金币翻倍","c_wide":"靶心","d_wide":"完美范围变大","c_snack":"小零食","d_snack":"+15 金币","t_heavy":"沉：塔晃得少","t_sticky":"粘：不容易掉","t_fluffy":"蓬松：完美范围大","t_wide":"宽：好接","t_bouncy":"弹弹：+2 金币","t_gold":"隐藏款：金币 ×3","t_none":"经典手感","s_capy":"卡皮巴拉","s_dump":"饺子","s_axo":"六角恐龙","s_cro":"可颂","s_cow":"长毛牛","s_mochi":"麻薯","s_frog":"青蛙","s_bun":"包子","s_peng":"企鹅","s_cat":"猫猫","s_jelly":"果冻","s_bear":"小熊","s_toast":"吐司","s_gcapy":"黄金卡皮巴拉","s_cosmo":"宇宙六角恐龙"},
+ja:{"paused":"一時停止中","resume":"つづける","lvN":"ステージ {n}","chapN":"第{n}章","map":"ステージ","endless":"エンドレス","endlessLock":"ステージ5クリアで解放","goal":"{n}段積もう","r_wind":"風あり","r_fast":"フックが速い","r_narrow":"土台がせまい","r_drops":"ふにふには{n}個だけ","r_hearts":"ハートは{n}つだけ","st1":"クリア","st2":"ハートを失わない","st3":"パーフェクト{n}回","go":"スタート！","boost":"アイテム","win":"ステージクリア！","fail":"おしい！","failLeft":"あと{n}段だった！","failDrops":"ふにふにがなくなった！","next":"次のステージ","retry":"もう一回","firstClr":"初クリア +{c}","newStar":"スター +{c}","left":"のこり{n}","shop":"ショップ","tabBases":"土台","buy":"買う","equip":"使う","using":"使用中","needSet":"{r}をコンプ","b_heart":"ハート+1でスタート","b_blink":"ワープ2回つきでスタート","b_wave":"しょうげき波2回つきでスタート","b_glue":"タワーがゆれにくい","sk_melon":"スイカ","sk_cookie":"クッキー","sk_cloud2":"くも","sk_rainbow":"にじいろ","allClear":"全ステージクリア！","serLock2":"🔒 ステージ{n}クリア","i_box":"ガチャ","i_coll":"ずかん","i_shop":"ショップ","i_daily":"ギフト","i_miss":"ミッション","goalShort":"目標","lb":"ランキング","lbWeek":"今週","lbAll":"歴代","lbYou":"あなた","lbNext":"次に追いこす","lbPass":"{n}を追いこした！","lbPassN":"今回{n}人追いこした","lbRank":"今週 {n}位","lbReset":"ふにふにたちと勝負！毎週月曜リセット。","lbWB":"今週のベスト","lbAB":"歴代ベスト","lbFirst":"今週1位！","tut1":"👆 ふにふにがタワーの真上に来たらタップ！","tut2":"点線を見て、緑になったらタップ！","tut3":"パーフェクト！パーフェクトでゆれがおさまるよ。","tut4":"⬆ これがゆれゲージ。いっぱいになるとタワーがたおれる！","tut5":"ミス！ハートは3つ。ぜんぶなくなると終わりだよ。","tut6":"10段ごとにパワーを1つえらべるよ！","tut7":"はじめてのガチャBOXは無料！あけてみよう！","daily":"デイリーギフト","missions":"ミッション","missSub":"毎日新しいミッション","claim":"受け取る","dayN":"{n}日目","dailyS":"毎日来てね！5日目と7日目は無料BOX！","dailyGot":"また明日来てね！","dailyBox":"BOX","freeBox":"無料BOX！","boxFree":"🎁 無料BOXをあける","boxNextIn":"次の無料BOXまで {t}","boxAd":"📺 無料BOX（今日あと{n}回）","boxAdNone":"今日の広告BOXはおしまい","ser_pals":"ふわふわアニマル","ser_cafe":"あまあまカフェ","ser_dream":"ゆめいろナイト","serLock":"🔒 {n}段で解放","setDone":"シリーズコンプリート！解放：{r}","setTodo":"コンプリートで解放：{r}","sk_pink":"ピンクのクッション","sk_garden":"お花のクッション","sk_cake":"ケーキ皿","sk_moon":"お月さまクッション","shiny":"✨ キラキラ！ ✨","starUp":"また{n} → ★{s}（1回ごとに+{s}コイン）","starMax":"{n}はもう★★★：+{c}コイン","revT":"もう一回チャンス？","revS":"{n}段からつづける","revGo":"📺 広告を見てつづける","noThanks":"やめておく（{n}）","adTest":"ここで広告が流れます（テスト版はスキップ）","double":"📺 コイン2倍（+{c}）","near":"自己ベストまであと{n}段！","m_floor":"1回で{n}段まで積む","m_perf":"パーフェクトを{n}回","m_combo":"{n}コンボを出す","m_runs":"{n}回あそぶ","m_box":"ガチャBOXを{n}個あける","m_cafe":"あまあまカフェを{n}個積む","m_pals":"ふわふわアニマルを{n}個積む","m_dream":"ゆめいろナイトを{n}個積む","s_shiba":"しばいぬ","s_rpanda":"レッサーパンダ","s_shark":"サメ","s_sloth":"ナマケモノ","s_dino":"きょうりゅう","s_oni":"おにぎり","s_sushi":"おすし","s_boba":"タピオカ","s_donut":"ドーナツ","s_pud":"プリン","s_berry":"いちご","s_rdonut":"にじいろドーナツ","s_ghost":"おばけ","s_cloud":"くも","s_mush":"きのこ","s_bat":"こうもり","s_bunny":"つきうさぎ","s_uni":"ユニコーン","s_dragon":"ちびドラゴン","name":"ふにふにスタック","tag":"ふにふにを落として、世界一ゆれるタワーを作ろう！","play":"あそぶ","coll":"ずかん","openBox":"ガチャBOX","best":"ベスト","how":"タップ / スペースで落とす · S しょうげき波 · D ワープ · Esc ⏸","floors":"段","earned":"コイン","again":"もう一回","home":"ホーム","back":"もどる","over":"タワーがたおれた！","overTop":"くずれちゃった！","newBest":"新記録！","pick":"{n}段！パワーをえらぼう","boxCost":"あける · {c}","boxTitle":"ガチャBOX","boxNeed":"{c}コイン必要。まずはあそぼう！","boxTap":"BOXをタップ！","boxNew":"NEW！{n}","boxDup":"また{n}… +{c}コイン","rar0":"ノーマル","rar1":"レア","rar2":"シークレット","collN":"{a} / {b} 発見","locked":"？？？ ガチャBOXでさがそう","perfect":"パーフェクト","combo":"{n}コンボ","miss":"あっ！","wobbly":"ゆれてる！","wind":"風","z0":"こうえん","z1":"屋上","z2":"雲の上","z3":"夕やけ","z4":"宇宙","wave":"しょうげき波","blink":"ワープ","c_mag":"マグネット","d_mag":"落とすと真ん中に引きよせる","c_glue":"ぴったりのり","d_glue":"ゆれが15%へる","c_slow":"のんびりフック","d_slow":"フックがゆっくりゆれる","c_heart":"クッション","d_heart":"ハート+1","c_sticky":"ぺたぺたおてて","d_sticky":"ずれても受け止めやすい","c_wave":"しょうげき波","d_wave":"+2回：ゆれを止める（S）","c_blink":"ワープ","d_blink":"+2回：次はど真ん中に落ちる（D）","c_aura":"オーラ","d_aura":"パーフェクトでコイン2倍","c_wide":"ど真ん中","d_wide":"パーフェクトの範囲が広がる","c_snack":"おやつ","d_snack":"コイン+15","t_heavy":"おもい：ゆれにくい","t_sticky":"ぺたぺた：落としにくい","t_fluffy":"ふわふわ：パーフェクトが出やすい","t_wide":"ひろい：のせやすい","t_bouncy":"ぽよぽよ：コイン+2","t_gold":"シークレット：コイン3倍","t_none":"定番のふにふに","s_capy":"カピバラ","s_dump":"ぎょうざ","s_axo":"ウーパールーパー","s_cro":"クロワッサン","s_cow":"もふもふウシ","s_mochi":"おもち","s_frog":"カエル","s_bun":"にくまん","s_peng":"ペンギン","s_cat":"ネコ","s_jelly":"ゼリー","s_bear":"クマ","s_toast":"食パン","s_gcapy":"金のカピバラ","s_cosmo":"宇宙ウーパー"},
+ko:{"paused":"일시정지","resume":"계속하기","lvN":"{n}단계","chapN":"{n}장","map":"단계","endless":"무한 도전","endlessLock":"5단계 클리어 시 열림","goal":"{n}층 쌓기","r_wind":"바람","r_fast":"빠른 고리","r_narrow":"좁은 받침","r_drops":"말랑이 {n}개뿐","r_hearts":"하트 {n}개뿐","st1":"클리어","st2":"하트 안 잃기","st3":"퍼펙트 {n}번","go":"시작!","boost":"아이템","win":"단계 클리어!","fail":"아깝다!","failLeft":"{n}층만 더!","failDrops":"말랑이가 다 떨어졌어요!","next":"다음 단계","retry":"다시 하기","firstClr":"첫 클리어 +{c}","newStar":"별 +{c}","left":"{n}개 남음","shop":"상점","tabBases":"받침","buy":"구매","equip":"사용","using":"사용 중","needSet":"{r} 모으기","b_heart":"하트 +1로 시작","b_blink":"순간이동 2회로 시작","b_wave":"충격파 2회로 시작","b_glue":"탑이 덜 흔들려요","sk_melon":"수박","sk_cookie":"쿠키","sk_cloud2":"구름","sk_rainbow":"무지개","allClear":"모든 단계 클리어!","serLock2":"🔒 {n}단계 클리어","i_box":"박스","i_coll":"도감","i_shop":"상점","i_daily":"출석","i_miss":"미션","goalShort":"목표","lb":"랭킹","lbWeek":"이번 주","lbAll":"역대","lbYou":"나","lbNext":"다음 목표","lbPass":"{n} 추월!","lbPassN":"이번 판 {n}명 추월","lbRank":"이번 주 {n}위","lbReset":"말랑이들을 이겨 봐요! 매주 월요일 초기화.","lbWB":"이번 주 최고","lbAB":"역대 최고","lbFirst":"이번 주 1위예요!","tut1":"👆 말랑이가 탑 바로 위에 왔을 때 탭!","tut2":"점선을 봐! 초록색이 되면 탭!","tut3":"퍼펙트! 퍼펙트로 놓으면 흔들림이 줄어요.","tut4":"⬆ 이게 흔들림 게이지예요. 꽉 차면 탑이 무너져요!","tut5":"놓쳤어요! 하트는 3개, 다 잃으면 게임 끝이에요.","tut6":"10층마다 능력을 하나 고를 수 있어요!","tut7":"첫 랜덤 박스는 무료! 열어 보세요!","daily":"출석 선물","missions":"미션","missSub":"매일 새로운 미션","claim":"받기","dayN":"{n}일차","dailyS":"매일 오세요! 5일차와 7일차에 무료 박스를 줘요.","dailyGot":"내일 또 와요!","dailyBox":"박스","freeBox":"무료 박스!","boxFree":"🎁 무료 박스 열기","boxNextIn":"다음 무료 박스까지 {t}","boxAd":"📺 무료 박스 (오늘 {n}번 남음)","boxAdNone":"오늘 광고 박스는 끝났어요","ser_pals":"말랑 동물","ser_cafe":"달콤 카페","ser_dream":"꿈나라 밤","serLock":"🔒 {n}층 도달 시 열림","setDone":"시리즈 완성! 해금: {r}","setTodo":"시리즈를 모으면 해금: {r}","sk_pink":"핑크 쿠션","sk_garden":"꽃밭 쿠션","sk_cake":"케이크 접시","sk_moon":"달 쿠션","shiny":"✨ 반짝이! ✨","starUp":"또 {n} → ★{s} (놓을 때마다 +{s} 코인)","starMax":"{n}는 이미 ★★★: +{c} 코인","revT":"한 번 더?","revS":"{n}층부터 계속하기","revGo":"📺 광고 보고 계속하기","noThanks":"괜찮아요 ({n})","adTest":"여기서 광고가 나와요 (테스트 버전은 건너뜀)","double":"📺 코인 2배 (+{c})","near":"최고 기록까지 {n}층 남았어요!","m_floor":"한 판에 {n}층까지 쌓기","m_perf":"퍼펙트 {n}번","m_combo":"{n}콤보 달성","m_runs":"{n}판 플레이","m_box":"랜덤 박스 {n}개 열기","m_cafe":"달콤 카페 말랑이 {n}개 쌓기","m_pals":"말랑 동물 {n}개 쌓기","m_dream":"꿈나라 밤 말랑이 {n}개 쌓기","s_shiba":"시바견","s_rpanda":"레서판다","s_shark":"상어","s_sloth":"나무늘보","s_dino":"아기 공룡","s_oni":"주먹밥","s_sushi":"초밥","s_boba":"버블티","s_donut":"도넛","s_pud":"푸딩","s_berry":"딸기","s_rdonut":"무지개 도넛","s_ghost":"꼬마 유령","s_cloud":"구름","s_mush":"버섯","s_bat":"박쥐","s_bunny":"달토끼","s_uni":"유니콘","s_dragon":"아기 용","name":"말랑 쌓기","tag":"말랑이를 떨어뜨려 세상에서 제일 흔들리는 탑을 쌓아요!","play":"시작","coll":"도감","openBox":"랜덤 박스","best":"최고","how":"탭 / 스페이스로 놓기 · S 충격파 · D 순간이동 · Esc ⏸","floors":"층","earned":"코인","again":"다시 하기","home":"홈","back":"뒤로","over":"탑이 무너졌어요!","overTop":"와르르!","newBest":"최고 기록!","pick":"{n}층! 능력을 골라요","boxCost":"열기 · {c}","boxTitle":"랜덤 박스","boxNeed":"{c} 코인이 필요해요. 한 판 해요!","boxTap":"박스를 탭!","boxNew":"NEW! {n}","boxDup":"또 {n}… +{c} 코인","rar0":"일반","rar1":"레어","rar2":"시크릿","collN":"{a} / {b} 발견","locked":"??? 랜덤 박스에서 찾아요","perfect":"퍼펙트","combo":"{n}콤보","miss":"앗!","wobbly":"흔들흔들!","wind":"바람","z0":"공원","z1":"옥상","z2":"구름 위","z3":"노을","z4":"우주","wave":"충격파","blink":"순간이동","c_mag":"자석","d_mag":"떨어뜨리면 가운데로 끌려가요","c_glue":"끈끈이","d_glue":"흔들림 15% 감소","c_slow":"느긋한 고리","d_slow":"고리가 천천히 흔들려요","c_heart":"쿠션","d_heart":"하트 +1","c_sticky":"찰싹 발바닥","d_sticky":"더 비껴도 잡아 줘요","c_wave":"충격파","d_wave":"+2회: 흔들림 멈추기 (S)","c_blink":"순간이동","d_blink":"+2회: 다음은 정중앙에 떨어져요 (D)","c_aura":"오라","d_aura":"퍼펙트 코인 2배","c_wide":"정중앙","d_wide":"퍼펙트 범위 확대","c_snack":"간식","d_snack":"코인 +15","t_heavy":"묵직: 탑이 덜 흔들려요","t_sticky":"찰싹: 잘 안 떨어져요","t_fluffy":"폭신: 퍼펙트가 쉬워요","t_wide":"넓적: 올리기 쉬워요","t_bouncy":"통통: 코인 +2","t_gold":"시크릿: 코인 3배","t_none":"기본 말랑이","s_capy":"카피바라","s_dump":"만두","s_axo":"우파루파","s_cro":"크루아상","s_cow":"털복숭이 소","s_mochi":"찹쌀떡","s_frog":"개구리","s_bun":"찐빵","s_peng":"펭귄","s_cat":"고양이","s_jelly":"젤리","s_bear":"곰","s_toast":"식빵","s_gcapy":"황금 카피바라","s_cosmo":"우주 우파루파"},
+pt:{"paused":"Pausado","resume":"Continuar","lvN":"Fase {n}","chapN":"Capítulo {n}","map":"Fases","endless":"Infinito","endlessLock":"Passe da fase 5 para desbloquear","goal":"Empilhe {n} andares","r_wind":"Vento","r_fast":"Gancho rápido","r_narrow":"Almofada estreita","r_drops":"Só {n} fofinhos","r_hearts":"Só {n} corações","st1":"Passar","st2":"Sem perder corações","st3":"{n} PERFEITOS","go":"JÁ!","boost":"Reforços","win":"Fase concluída!","fail":"Quase!","failLeft":"Faltavam só {n} andares!","failDrops":"Acabaram os fofinhos!","next":"Próxima fase","retry":"Tentar de novo","firstClr":"Primeira vitória +{c}","newStar":"Estrelas +{c}","left":"Restam {n}","shop":"Loja","tabBases":"Almofadas","buy":"Comprar","equip":"Usar","using":"Em uso","needSet":"Complete {r}","b_heart":"Comece com +1 coração","b_blink":"Comece com 2 teleportes","b_wave":"Comece com 2 ondas de choque","b_glue":"A torre balança menos","sk_melon":"Melancia","sk_cookie":"Biscoito","sk_cloud2":"Nuvem","sk_rainbow":"Arco-íris","allClear":"Todas as fases concluídas!","serLock2":"🔒 Passe da fase {n}","i_box":"Caixas","i_coll":"Álbum","i_shop":"Loja","i_daily":"Presente","i_miss":"Missões","goalShort":"Meta","lb":"Ranking","lbWeek":"Esta semana","lbAll":"Geral","lbYou":"Você","lbNext":"Próximo a superar","lbPass":"Passou {n}!","lbPassN":"Passou {n} nesta partida","lbRank":"{n}º nesta semana","lbReset":"Supere os fofinhos! Reinicia toda segunda.","lbWB":"Recorde da semana","lbAB":"Recorde geral","lbFirst":"Você é o 1º desta semana!","tut1":"👆 Toque quando o fofinho estiver bem em cima da torre!","tut2":"Olhe a linha pontilhada: toque quando ficar verde!","tut3":"PERFEITO! Quedas perfeitas acalmam o balanço.","tut4":"⬆ Esta é a barra de balanço. Se encher, a torre cai!","tut5":"Errou! Você tem 3 corações: perdeu todos, acabou a partida.","tut6":"A cada 10 andares você escolhe um poder!","tut7":"Sua primeira caixa surpresa é grátis, abra!","daily":"Presente do dia","missions":"Missões","missSub":"Missões novas todo dia","claim":"Pegar","dayN":"Dia {n}","dailyS":"Volte todo dia! Os dias 5 e 7 dão caixas surpresa.","dailyGot":"Volte amanhã!","dailyBox":"Caixa","freeBox":"Caixa grátis!","boxFree":"🎁 Abrir caixa grátis","boxNextIn":"Próxima caixa grátis em {t}","boxAd":"📺 Caixa grátis (restam {n} hoje)","boxAdNone":"Acabaram as caixas com anúncio hoje","ser_pals":"Amigos Fofos","ser_cafe":"Café Doce","ser_dream":"Noite Mágica","serLock":"🔒 Chegue ao andar {n}","setDone":"Série completa! Desbloqueado: {r}","setTodo":"Complete a série para desbloquear: {r}","sk_pink":"Almofada rosa","sk_garden":"Almofada jardim","sk_cake":"Prato de bolo","sk_moon":"Almofada lua","shiny":"✨ BRILHANTE! ✨","starUp":"{n} de novo → ★{s}  (+{s} moeda por queda)","starMax":"{n} já tem ★★★: +{c} moedas","revT":"Mais uma chance?","revS":"Continue do andar {n}","revGo":"📺 Ver um anúncio para continuar","noThanks":"Não, obrigado ({n})","adTest":"Aqui aparece um anúncio (a versão de teste pula)","double":"📺 Dobrar moedas (+{c})","near":"Só {n} andares do seu recorde!","m_floor":"Chegue ao andar {n} numa partida","m_perf":"Faça {n} quedas PERFEITAS","m_combo":"Faça um combo x{n}","m_runs":"Jogue {n} partidas","m_box":"Abra {n} caixas surpresa","m_cafe":"Empilhe {n} fofinhos do Café Doce","m_pals":"Empilhe {n} Amigos Fofos","m_dream":"Empilhe {n} fofinhos da Noite Mágica","s_shiba":"Shiba","s_rpanda":"Panda-vermelho","s_shark":"Tubarão","s_sloth":"Bicho-preguiça","s_dino":"Dino","s_oni":"Bolinho de arroz","s_sushi":"Sushi","s_boba":"Bubble tea","s_donut":"Rosquinha","s_pud":"Pudim","s_berry":"Morango","s_rdonut":"Rosquinha arco-íris","s_ghost":"Fantasminha","s_cloud":"Nuvem","s_mush":"Cogumelo","s_bat":"Morcego","s_bunny":"Coelho lunar","s_uni":"Unicórnio","s_dragon":"Dragãozinho","name":"Squishy Stack","tag":"Solte os fofinhos. Construa a torre mais balançante do mundo!","play":"JOGAR","coll":"Coleção","openBox":"Caixa surpresa","best":"Recorde","how":"Toque / Espaço para soltar · S onda de choque · D teleporte · Esc ⏸","floors":"Andares","earned":"Moedas","again":"Jogar de novo","home":"Início","back":"Voltar","over":"A torre caiu!","overTop":"Desmoronou!","newBest":"Novo recorde!","pick":"Andar {n}! Escolha um poder","boxCost":"Abrir · {c}","boxTitle":"Caixa surpresa","boxNeed":"Precisa de {c} moedas: jogue uma partida!","boxTap":"Toque na caixa!","boxNew":"NOVO! {n}","boxDup":"{n} de novo… +{c} moedas","rar0":"Comum","rar1":"Raro","rar2":"SECRETO","collN":"{a} / {b} encontrados","locked":"??? Encontre numa caixa surpresa","perfect":"PERFEITO","combo":"COMBO x{n}","miss":"Opa!","wobbly":"BALANÇANDO!","wind":"Vento","z0":"Parque","z1":"Telhados","z2":"Nuvens","z3":"Pôr do sol","z4":"Espaço","wave":"Onda de choque","blink":"Teleporte","c_mag":"Ímã","d_mag":"As quedas puxam para o meio","c_glue":"Cola","d_glue":"A torre balança 15% menos","c_slow":"Gancho preguiçoso","d_slow":"O gancho balança mais devagar","c_heart":"Almofada","d_heart":"+1 coração","c_sticky":"Patinhas grudentas","d_sticky":"Segura quedas mais tortas","c_wave":"Onda de choque","d_wave":"+2 cargas: acalma o balanço (S)","c_blink":"Teleporte","d_blink":"+2 cargas: a próxima cai bem no meio (D)","c_aura":"Aura","d_aura":"Quedas perfeitas dão o dobro de moedas","c_wide":"Na mosca","d_wide":"Zona PERFEITO maior","c_snack":"Lanchinho","d_snack":"+15 moedas","t_heavy":"Pesado: a torre balança menos","t_sticky":"Grudento: difícil de errar","t_fluffy":"Macio: zona PERFEITO maior","t_wide":"Largo: fácil de acertar","t_bouncy":"Saltitante: +2 moedas","t_gold":"Secreto: moedas x3","t_none":"Fofinho clássico","s_capy":"Capivara","s_dump":"Guioza","s_axo":"Axolote","s_cro":"Croissant","s_cow":"Vaca peluda","s_mochi":"Mochi","s_frog":"Sapo","s_bun":"Pãozinho no vapor","s_peng":"Pinguim","s_cat":"Gato","s_jelly":"Gelatina","s_bear":"Urso","s_toast":"Torrada","s_gcapy":"Capivara dourada","s_cosmo":"Axolote cósmico"},
+ru:{"paused":"Пауза","resume":"Продолжить","lvN":"Уровень {n}","chapN":"Глава {n}","map":"Уровни","endless":"Бесконечный","endlessLock":"Пройди 5-й уровень, чтобы открыть","goal":"Построй {n} этажей","r_wind":"Ветер","r_fast":"Быстрый крюк","r_narrow":"Узкая подушка","r_drops":"Только {n} мякишей","r_hearts":"Только {n} сердца","st1":"Пройти","st2":"Без потери сердец","st3":"{n} ИДЕАЛЬНЫХ","go":"ВПЕРЁД!","boost":"Бонусы","win":"Уровень пройден!","fail":"Чуть-чуть!","failLeft":"Осталось всего {n} этажей!","failDrops":"Мякиши закончились!","next":"Следующий уровень","retry":"Ещё раз","firstClr":"Первое прохождение +{c}","newStar":"Звёзды +{c}","left":"Осталось {n}","shop":"Магазин","tabBases":"Подушки","buy":"Купить","equip":"Выбрать","using":"Выбрано","needSet":"Собери «{r}»","b_heart":"Старт с +1 сердцем","b_blink":"Старт с 2 телепортами","b_wave":"Старт с 2 ударными волнами","b_glue":"Башня меньше качается","sk_melon":"Арбуз","sk_cookie":"Печенье","sk_cloud2":"Облачко","sk_rainbow":"Радуга","allClear":"Все уровни пройдены!","serLock2":"🔒 Пройди уровень {n}","i_box":"Коробки","i_coll":"Альбом","i_shop":"Магазин","i_daily":"Подарок","i_miss":"Задания","goalShort":"Цель","lb":"Рейтинг","lbWeek":"Неделя","lbAll":"За всё время","lbYou":"Ты","lbNext":"Следующая цель","lbPass":"Обогнал: {n}!","lbPassN":"Обогнано за игру: {n}","lbRank":"{n}-е место за неделю","lbReset":"Обгони мякишей! Сброс каждый понедельник.","lbWB":"Рекорд недели","lbAB":"Рекорд за всё время","lbFirst":"Ты первый на этой неделе!","tut1":"👆 Нажми, когда мякиш прямо над башней!","tut2":"Смотри на пунктир: нажми, когда он станет зелёным!","tut3":"ИДЕАЛЬНО! Идеальные броски успокаивают качку.","tut4":"⬆ Это шкала качки. Заполнится — башня упадёт!","tut5":"Мимо! У тебя 3 сердца: потеряешь все — игра окончена.","tut6":"Каждые 10 этажей можно выбрать силу!","tut7":"Первая коробка-сюрприз бесплатно — открой её!","daily":"Подарок дня","missions":"Задания","missSub":"Новые задания каждый день","claim":"Забрать","dayN":"День {n}","dailyS":"Заходи каждый день! На 5-й и 7-й день — бесплатная коробка.","dailyGot":"Приходи завтра!","dailyBox":"Коробка","freeBox":"Бесплатная коробка!","boxFree":"🎁 Открыть бесплатно","boxNextIn":"Следующая бесплатная через {t}","boxAd":"📺 Бесплатная коробка (сегодня ещё {n})","boxAdNone":"Коробки за рекламу на сегодня кончились","ser_pals":"Мягкие друзья","ser_cafe":"Сладкое кафе","ser_dream":"Волшебная ночь","serLock":"🔒 Дойди до {n} этажа","setDone":"Серия собрана! Открыто: {r}","setTodo":"Собери серию и получи: {r}","sk_pink":"Розовая подушка","sk_garden":"Садовая подушка","sk_cake":"Тарелка с тортом","sk_moon":"Лунная подушка","shiny":"✨ БЛЕСТЯЩИЙ! ✨","starUp":"Снова {n} → ★{s}  (+{s} монета за бросок)","starMax":"У {n} уже ★★★: +{c} монет","revT":"Ещё один шанс?","revS":"Продолжить с {n} этажа","revGo":"📺 Посмотреть рекламу и продолжить","noThanks":"Нет, спасибо ({n})","adTest":"Здесь будет реклама (тестовая версия пропускает)","double":"📺 Удвоить монеты (+{c})","near":"До рекорда всего {n} этажей!","m_floor":"Дойди до {n} этажа за игру","m_perf":"Сделай {n} ИДЕАЛЬНЫХ бросков","m_combo":"Сделай комбо x{n}","m_runs":"Сыграй {n} раз","m_box":"Открой {n} коробок-сюрпризов","m_cafe":"Поставь {n} мякишей из «Сладкого кафе»","m_pals":"Поставь {n} мягких друзей","m_dream":"Поставь {n} мякишей из «Волшебной ночи»","s_shiba":"Сиба","s_rpanda":"Красная панда","s_shark":"Акула","s_sloth":"Ленивец","s_dino":"Динозаврик","s_oni":"Онигири","s_sushi":"Суши","s_boba":"Бабл-ти","s_donut":"Пончик","s_pud":"Пудинг","s_berry":"Клубничка","s_rdonut":"Радужный пончик","s_ghost":"Призрачок","s_cloud":"Облачко","s_mush":"Грибочек","s_bat":"Летучая мышь","s_bunny":"Лунный зайка","s_uni":"Единорог","s_dragon":"Дракончик","name":"Squishy Stack","tag":"Бросай мякишей и построй самую шаткую башню в мире!","play":"ИГРАТЬ","coll":"Коллекция","openBox":"Коробка-сюрприз","best":"Рекорд","how":"Нажми / Пробел — бросить · S ударная волна · D телепорт · Esc ⏸","floors":"Этажи","earned":"Монеты","again":"Ещё раз","home":"Меню","back":"Назад","over":"Башня упала!","overTop":"Рухнула!","newBest":"Новый рекорд!","pick":"Этаж {n}! Выбери силу","boxCost":"Открыть · {c}","boxTitle":"Коробка-сюрприз","boxNeed":"Нужно {c} монет — сыграй!","boxTap":"Нажми на коробку!","boxNew":"НОВЫЙ! {n}","boxDup":"Снова {n}… +{c} монет","rar0":"Обычный","rar1":"Редкий","rar2":"СЕКРЕТНЫЙ","collN":"Найдено {a} / {b}","locked":"??? Ищи в коробке-сюрпризе","perfect":"ИДЕАЛЬНО","combo":"КОМБО x{n}","miss":"Ой!","wobbly":"ШАТАЕТСЯ!","wind":"Ветер","z0":"Парк","z1":"Крыши","z2":"Облака","z3":"Закат","z4":"Космос","wave":"Ударная волна","blink":"Телепорт","c_mag":"Магнит","d_mag":"Броски тянет к центру","c_glue":"Клей","d_glue":"Башня качается на 15% меньше","c_slow":"Ленивый крюк","d_slow":"Крюк качается медленнее","c_heart":"Подушка","d_heart":"+1 сердце","c_sticky":"Липкие лапки","d_sticky":"Ловит даже косые броски","c_wave":"Ударная волна","d_wave":"+2 заряда: гасит качку (S)","c_blink":"Телепорт","d_blink":"+2 заряда: следующий упадёт точно в центр (D)","c_aura":"Аура","d_aura":"Идеальные броски дают вдвое больше монет","c_wide":"В яблочко","d_wide":"Больше зона «ИДЕАЛЬНО»","c_snack":"Перекус","d_snack":"+15 монет","t_heavy":"Тяжёлый: башня меньше качается","t_sticky":"Липкий: трудно промахнуться","t_fluffy":"Пушистый: больше зона «ИДЕАЛЬНО»","t_wide":"Широкий: легко попасть","t_bouncy":"Прыгучий: +2 монеты","t_gold":"Секретный: монеты x3","t_none":"Классический мякиш","s_capy":"Капибара","s_dump":"Пельмешек","s_axo":"Аксолотль","s_cro":"Круассан","s_cow":"Лохматая корова","s_mochi":"Моти","s_frog":"Лягушка","s_bun":"Паровая булочка","s_peng":"Пингвин","s_cat":"Котик","s_jelly":"Желе","s_bear":"Мишка","s_toast":"Тост","s_gcapy":"Золотая капибара","s_cosmo":"Космо-аксолотль"}};
+const LANGS=[['en','English'],['fr','Français'],['it','Italiano'],['de','Deutsch'],['es','Español'],['tr','Türkçe'],['zh','中文'],['ja','日本語'],['ko','한국어'],['pt','Português'],['ru','Русский']];
+const store={get(k,d){try{const v=localStorage.getItem('sqs_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem('sqs_'+k,JSON.stringify(v))}catch(e){}}};
+const qLang=new URLSearchParams(location.search).get('lang');
+function pickLang(){const c=[qLang,store.get('lang',null)].concat(navigator.languages||[navigator.language||'en']);for(const x of c){if(!x)continue;const k=String(x).toLowerCase().slice(0,2);if(TXT[k])return k}return'en'}
+let LANG=pickLang();
+const T=(k,o)=>{let s=(TXT[LANG]&&TXT[LANG][k])||TXT.en[k]||k;if(o)for(const a in o)s=s.replace('{'+a+'}',o[a]);return s};
+
+/* ================= species ================= */
+// shape: round | dump | cro | bun | toast ; ears: nub horns gills cat bear frog ; trait
+const SPECIES=[
+ // Squishy Pals
+ {id:'capy',ser:'pals',r:0,col:'#c08a58',belly:'#e3bd92',shape:'round',w:120,h:72,ears:'nub',trait:'heavy'},
+ {id:'axo',ser:'pals',r:0,col:'#ffb1c9',belly:'#ffd6e3',shape:'round',w:104,h:66,ears:'gills',trait:'sticky'},
+ {id:'cow',ser:'pals',r:0,col:'#c8733c',belly:'#e8a36f',shape:'round',w:118,h:76,ears:'horns',trait:'fluffy'},
+ {id:'frog',ser:'pals',r:0,col:'#86cf68',belly:'#c8eda0',shape:'round',w:108,h:62,ears:'frog',trait:'sticky'},
+ {id:'shiba',ser:'pals',r:0,col:'#f2a65a',belly:'#fff4e6',shape:'round',w:110,h:70,ears:'cat',trait:'none'},
+ {id:'rpanda',ser:'pals',r:0,col:'#c9572f',belly:'#f6e7dc',shape:'round',w:110,h:70,ears:'bear',mask:true,trait:'fluffy'},
+ {id:'shark',ser:'pals',r:0,col:'#7fa9cc',belly:'#f4f8fb',shape:'round',w:132,h:62,ears:'fin',trait:'wide'},
+ {id:'peng',ser:'pals',r:1,col:'#3f4d6e',belly:'#ffffff',shape:'round',w:100,h:78,ears:'none',beak:true,trait:'heavy'},
+ {id:'cat',ser:'pals',r:1,col:'#ffcf78',belly:'#fff0cf',shape:'round',w:106,h:70,ears:'cat',trait:'fluffy'},
+ {id:'bear',ser:'pals',r:1,col:'#a7795b',belly:'#d9b393',shape:'round',w:112,h:74,ears:'bear',trait:'heavy'},
+ {id:'sloth',ser:'pals',r:1,col:'#b6a28c',belly:'#e9dccb',shape:'round',w:112,h:70,patch:true,trait:'sticky'},
+ {id:'dino',ser:'pals',r:1,col:'#8cd47e',belly:'#d8f3c8',shape:'round',w:112,h:70,ears:'spikes',trait:'bouncy'},
+ {id:'gcapy',ser:'pals',r:2,col:'#ffd23f',belly:'#fff09a',shape:'round',w:122,h:72,ears:'nub',trait:'gold',shine:true},
+ // Sweet Café
+ {id:'dump',ser:'cafe',r:0,col:'#fbf3e4',shape:'dump',w:116,h:64,trait:'none'},
+ {id:'cro',ser:'cafe',r:0,col:'#e8a64c',shape:'cro',w:138,h:56,trait:'wide'},
+ {id:'mochi',ser:'cafe',r:0,col:'#f8dcea',shape:'round',w:100,h:62,trait:'none'},
+ {id:'bun',ser:'cafe',r:0,col:'#fff4e2',shape:'bun',w:110,h:68,trait:'heavy'},
+ {id:'oni',ser:'cafe',r:0,col:'#ffffff',shape:'tri',w:112,h:76,trait:'sticky',faceY:0.5},
+ {id:'sushi',ser:'cafe',r:0,col:'#fffaf2',shape:'round',w:120,h:62,topper:true,trait:'none',faceY:0.4},
+ {id:'toast',ser:'cafe',r:1,col:'#f3cf8f',shape:'toast',w:116,h:70,trait:'wide'},
+ {id:'boba',ser:'cafe',r:1,col:'#f1d6b8',shape:'cup',w:98,h:80,trait:'bouncy',faceY:0.58},
+ {id:'donut',ser:'cafe',r:1,col:'#e7b073',frost:'#ff9cc6',shape:'round',w:120,h:62,trait:'fluffy',faceY:0.42},
+ {id:'pud',ser:'cafe',r:1,col:'#ffd66b',shape:'pud',w:108,h:70,trait:'heavy',faceY:0.45},
+ {id:'berry',ser:'cafe',r:1,col:'#ff5c6c',shape:'berry',w:104,h:72,ears:'leaf',trait:'sticky',faceY:0.55},
+ {id:'rdonut',ser:'cafe',r:2,col:'#e7b073',frost:'rainbow',shape:'round',w:122,h:62,trait:'gold',faceY:0.42,shine:true},
+ // Dreamy Night
+ {id:'jelly',ser:'dream',r:0,col:'#7fd8ff',shape:'round',w:104,h:64,jelly:true,trait:'bouncy'},
+ {id:'ghost',ser:'dream',r:0,col:'#f7f4ff',shape:'ghost',w:104,h:74,trait:'none',faceY:0.6},
+ {id:'cloud',ser:'dream',r:0,col:'#ffffff',shape:'cloud',w:134,h:60,trait:'wide',faceY:0.5},
+ {id:'mush',ser:'dream',r:0,col:'#ff6b6b',shape:'mush',w:114,h:76,trait:'heavy',faceY:0.24,eyeX:0.11},
+ {id:'bat',ser:'dream',r:0,col:'#6d5a8c',belly:'#a593c2',shape:'round',w:96,h:62,ears:'bat',trait:'none'},
+ {id:'bunny',ser:'dream',r:1,col:'#dccdff',belly:'#f4eeff',shape:'round',w:104,h:68,ears:'bunny',trait:'fluffy'},
+ {id:'uni',ser:'dream',r:1,col:'#fff5fb',shape:'round',w:110,h:70,ears:'uni',trait:'sticky'},
+ {id:'dragon',ser:'dream',r:1,col:'#7fd6c2',belly:'#e0f7ef',shape:'round',w:112,h:72,ears:'dragon',trait:'heavy'},
+ {id:'cosmo',ser:'dream',r:2,col:'#6c5ad8',belly:'#a99cff',shape:'round',w:106,h:66,ears:'gills',trait:'gold',stars:true}
+];
+const SERIES=[{id:'pals',skin:'garden',need:0,box:['#ff9cc0','#e46e98','#ffd1e2']},{id:'cafe',skin:'cake',need:0,box:['#ffcf8a','#d99a3e','#fff0d1']},{id:'dream',skin:'moon',need:40,box:['#a99cff','#6c5ad8','#ddd6ff']}];
+const SER={};SERIES.forEach(x=>SER[x.id]=x);
+const SP={};SPECIES.forEach(s=>SP[s.id]=s);
+const START=['capy','dump','axo'];
+let owned=store.get('owned',START.slice()).filter(id=>SP[id]);if(!owned.length)owned=START.slice();
+let tutDone=store.get('tutDone',false),tutSeen={};
+let coins=store.get('coins',0),best=store.get('best',0),muted=store.get('mute',false),adMute=false;
+let stars=store.get('stars',{}),shinyOwn=store.get('shiny',{}),skin=store.get('skin','pink'),tokens=store.get('tokens',0),freeAt=store.get('freeAt',0);
+let LP=store.get('lvp',[]),INV=store.get('inv',{heart:0,blink:0,wave:0,glue:0}),BASES=store.get('bases',['pink']),runsDone=0;
+const seriesOpen=id=>id!=='dream'||best>=40||LP[19]>0;
+const BUILD='poki';
+// Poki shows its pill at top centre on touch screens: push the centre HUD below it
+const HUDY=(BUILD==='poki'&&matchMedia('(pointer:coarse)').matches)?44:0;
+const BOX_COST=60;
+
+/* ================= canvas ================= */
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+let CW=0,CH=0,DPR=1,S=1,OX=0,VH=860;
+const WW=480,GROUND=96;
+function resize(){DPR=Math.min(2,window.devicePixelRatio||1);CW=innerWidth;CH=innerHeight;cv.width=CW*DPR;cv.height=CH*DPR;S=Math.min(CW/WW,CH/860);OX=(CW-WW*S)/2;VH=CH/S}
+addEventListener('resize',resize);resize();
+
+/* ================= audio ================= */
+let AC=null;
+function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
+function tone(f,f2,dur,type,vol,delay){if(muted||adMute)return;const a=ac();if(!a)return;const t=a.currentTime+(delay||0);const o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+dur);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol||0.2,t+0.012);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(g).connect(a.destination);o.start(t);o.stop(t+dur+0.02)}
+const SFX={
+ drop(){tone(520,300,0.12,'triangle',0.08)},
+ squish(c){const p=1+Math.min(c,10)*0.06;tone(180*p,90*p,0.18,'sine',0.35);tone(700*p,1100*p,0.07,'triangle',0.06,0.02)},
+ perfect(c){const b=660*Math.pow(1.06,Math.min(c,12));tone(b,0,0.12,'triangle',0.15);tone(b*1.5,0,0.16,'triangle',0.12,0.07)},
+ miss(){tone(400,140,0.4,'sawtooth',0.07)},
+ coin(){tone(1200,1600,0.06,'square',0.04)},
+ wobble(){tone(110,80,0.25,'sine',0.2)},
+ wave(){tone(90,40,0.5,'sine',0.4);tone(300,900,0.3,'triangle',0.06)},
+ blink(){tone(900,1800,0.15,'sine',0.12)},
+ pick(){tone(500,0,0.08,'triangle',0.12);tone(750,0,0.1,'triangle',0.12,0.08)},
+ fall(){tone(300,60,0.9,'sawtooth',0.08)},
+ box(){tone(220,0,0.06,'square',0.05)},
+ win(){[523,659,784,1046,1318].forEach((f,i)=>tone(f,0,0.2,'triangle',0.13,i*0.09))},
+ pass(){[784,988,1318].forEach((f,i)=>tone(f,0,0.14,'triangle',0.12,i*0.06))},
+ reveal(r){[523,659,784,1046].forEach((f,i)=>tone(f*(r===2?1.5:1),0,0.22,'triangle',0.12,i*0.08))}
+};
+
+/* ================= game state ================= */
+const G={state:'title',tower:[],floor:0,sway:0,phase:0,hearts:3,maxHearts:5,combo:0,coinsRun:0,cam:0,camV:0,
+ hook:{t:0,piece:null,cool:0},falling:null,lost:[],pops:[],parts:[],card:{},waves:0,blinks:0,blinkArm:false,
+ wind:0,windT:0,shake:0,topple:null,bag:[],time:0,flash:0,zoneShow:null,lastZone:0,auto:false,botSkill:0.06,camX:0,hookC:240,mode:'endless',lvl:null,lvIdx:0};
+const BASE={x:240,w:200,h:34};
+function lv(id){return G.card[id]||0}
+function zoneOf(f){return f>=60?4:f>=40?3:f>=25?2:f>=12?1:0}
+
+/* ---- levels: 3 chapters x 10 ---- */
+const LV=[
+ {n:8,perf:2},{n:10,perf:3},{n:12,perf:3},{n:15,perf:4},{n:15,drops:20,perf:4},
+ {n:18,perf:5},{n:20,wind:40,perf:5},{n:22,narrow:40,perf:6},{n:24,drops:30,perf:6},{n:28,wind:55,hearts:2,perf:7},
+ {n:24,fast:1.15,perf:6},{n:26,perf:7},{n:28,wind:65,perf:7},{n:30,narrow:60,perf:7},{n:32,drops:38,perf:8},
+ {n:34,fast:1.25,perf:8},{n:34,hearts:2,perf:8},{n:36,wind:75,narrow:40,perf:8},{n:38,drops:44,fast:1.2,perf:9},{n:42,wind:80,hearts:2,perf:10},
+ {n:36,wind:75,perf:8},{n:40,fast:1.25,perf:9},{n:42,narrow:80,perf:9},{n:44,drops:50,perf:10},{n:46,wind:100,perf:10},
+ {n:48,hearts:2,fast:1.25,perf:10},{n:50,narrow:60,wind:80,perf:11},{n:52,drops:58,perf:12},{n:55,hearts:2,wind:100,perf:12},{n:60,fast:1.2,wind:90,narrow:50,hearts:2,perf:13}];
+const LEVELS=LV.map((l,i)=>Object.assign({i,ser:['pals','cafe','dream'][i/10|0],boss:i%10===9},l));
+function curLevel(){for(let i=0;i<LEVELS.length;i++)if(!LP[i])return i;return LEVELS.length-1}
+function lvOpen(i){return i===0||LP[i-1]>0}
+function endlessOpen(){return LP[4]>0||best>0}
+function dropsLeft(){return G.lvl&&G.lvl.drops?G.lvl.drops+G.extraDrops-G.drops:Infinity}
+function nextSpecies(){
+ if(!G.bag.length&&G.mode==='level'){const pool=[];SPECIES.filter(s=>s.ser===G.lvl.ser&&s.r<2).forEach(s=>{for(let i=0;i<(s.r?2:3);i++)pool.push(s.id)});
+  for(let i=pool.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[pool[i],pool[j]]=[pool[j],pool[i]]}G.bag=pool}
+ if(!G.bag.length){const pool=[];owned.forEach(id=>{const s=SP[id];const n=s.r===2?1:s.r===1?2:3;for(let i=0;i<n;i++)pool.push(id)});
+  for(let i=pool.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[pool[i],pool[j]]=[pool[j],pool[i]]}G.bag=pool}
+ return G.bag.pop();
+}
+function mkPiece(id){const s=SP[id];return{id,s,w:s.w,h:s.h,x:240,y:0,lx:0,sq:0,sqv:0,rot:0,mood:0,blinkT:Math.random()*3,shiny:!!shinyOwn[id]&&Math.random()<0.35}}
+
+function topY(){let y=BASE.h;for(const p of G.tower)y+=p.h;return y}
+function topPiece(){return G.tower[G.tower.length-1]||null}
+// horizontal display offset of tower at height y
+function swayAt(y){const H=Math.max(160,topY());const k=Math.pow(Math.max(0,y)/H,1.5);return G.sway*Math.sin(G.phase)*k}
+function topLocalX(){const p=topPiece();return p?p.lx:240}
+function topWidth(){const p=topPiece();return p?p.w:BASE.w}
+
+function startRun(o){
+ o=o||{mode:'endless'};G.mode=o.mode;G.lvIdx=o.idx||0;G.lvl=o.mode==='level'?LEVELS[G.lvIdx]:null;BASE.w=200-(G.lvl&&G.lvl.narrow||0);
+ G.hookC=240;Object.assign(G,{drops:0,extraDrops:0,perfN:0,lostHearts:0,failReason:'',state:'play',tower:[],floor:0,sway:0,phase:0,hearts:3,combo:0,coinsRun:0,cam:0,camV:0,falling:null,lost:[],pops:[],parts:[],card:{},waves:0,blinks:0,blinkArm:false,wind:0,windT:4,shake:0,topple:null,bag:[],time:0,flash:0,zoneShow:null,lastZone:0,camX:0,hookC:240,revived:false,doubled:false});
+ G.hook={t:0,piece:mkPiece(nextSpecies()),cool:0.4};
+ if(G.lvl&&G.lvl.hearts)G.hearts=G.lvl.hearts;
+ const b=o.boost||{};if(b.heart)G.hearts=Math.min(G.maxHearts,G.hearts+1);if(b.blink)G.blinks+=2;if(b.wave)G.waves+=2;if(b.glue)G.card.glue=1;
+ if(G.mode==='level'){runTargets=[];passedN=0;passFx=null}else buildTargets();
+ showLayer(null);updSkills();gp(true);
+ ac();
+}
+
+/* swing */
+function swingPeriod(){return Math.max(0.68,2.25-G.floor*0.018)*(1+0.12*lv('slow'))*(!tutDone&&G.floor<5?1.45:1)/(G.lvl&&G.lvl.fast||1)}
+function swingAmp(){return Math.min(200,105+G.floor*1.4)}
+function pivotY(){return G.cam+VH-GROUND-34}
+const ROPE=120;
+function hookPos(){const th=Math.sin(G.hook.t*2*Math.PI/swingPeriod());return{x:G.hookC+swingAmp()*th,vx:swingAmp()*Math.cos(G.hook.t*2*Math.PI/swingPeriod())*2*Math.PI/swingPeriod()}}
+
+function drop(){
+ if(userPaused||adActive||G.state!=='play'||!G.hook.piece||G.hook.cool>0||G.falling)return;
+ const p=G.hook.piece,h=hookPos();
+ p.x=h.x;p.y=pivotY()-ROPE-p.h;p.vx=h.vx*0.35;p.vy=-60;
+ if(G.blinkArm){G.blinkArm=false;p.x=topLocalX()+swayAt(topY());p.vx=0;p.blinked=true;burst(p.x,p.y+p.h/2,'#b9a8ff',14);SFX.blink()}
+ G.falling=p;G.hook.piece=null;G.hook.cool=0.28;G.drops++;SFX.drop();
+}
+
+function land(p){
+ const ty=topY(),tp=topPiece();
+ const topX=(tp?tp.lx:240)+swayAt(ty);
+ let dx=p.x-topX;
+ const tw=tp?tp.w:BASE.w;
+ const s=p.s;
+ if(lv('mag'))dx*=1-0.2*lv('mag');
+ let catchK=0.82*(1+0.1*lv('sticky'))*(s.trait==='sticky'?1.15:1)*Math.max(0.55,1-Math.max(0,G.floor-90)/250);
+ const lim=(tw+p.w)/2*Math.min(catchK,1.05);
+ if(Math.abs(dx)>lim){ // miss
+  p.vx=(dx>0?1:-1)*160;p.vr=(dx>0?1:-1)*4;p.missed=true;G.lost.push(p);
+  G.hearts--;G.lostHearts++;G.combo=0;G.shake=8;pop(p.x,ty+40,T('miss'),'#ff5d7a',1.1);SFX.miss();vib(40);if(G.hearts>0)tutOnce('tut5',3);
+  if(G.hearts<=0){endRun(false)}else if(dropsLeft()<=0){G.failReason='drops';endRun(false)}
+  return;
+ }
+ let perfectW=7*(1+0.3*lv('wide'))*(s.trait==='fluffy'?1.6:1);
+ const perfect=Math.abs(dx)<=perfectW||p.blinked;
+ if(perfect)dx=0;
+ p.lx=(tp?tp.lx:240)+dx;p.y=ty;p.sq=0;p.sqv=-6.5;p.mood=perfect?1.2:0;
+ G.tower.push(p);G.floor++;missAdd(s.ser,1);checkPass();
+ // squish everyone below a little
+ for(let i=G.tower.length-2,k=0;i>=0&&k<5;i--,k++){G.tower[i].sqv-=3.2/(k+1)}
+ // wobble
+ let add=Math.abs(dx)*0.26+0.7;
+ if(s.trait==='heavy')add*=0.6;
+ add*=1-0.15*lv('glue');add*=1+Math.max(0,G.floor-90)/80;
+ let gain=1;
+ if(perfect){G.combo++;G.perfN++;tutOnce('tut3',2.6);missAdd('perf',1);missMax('combo',G.combo);G.sway*=G.combo>=3?0.55:0.72;add=0.4;
+  gain=2*(1+lv('aura'));if(G.combo>=3)gain+=G.combo;
+  pop(p.lx,ty+p.h+30,G.combo>=3?T('combo',{n:G.combo}):T('perfect'),'#ff5ca0',G.combo>=3?1.35:1.1);
+  SFX.perfect(G.combo);ring(p.lx,ty+p.h/2,p.w)}
+ else{G.combo=0}
+ G.sway+=add;
+ let c=1+gain;if(s.trait==='gold')c*=3;if(s.trait==='bouncy')c+=2;c+=(stars[p.id]||0);if(p.shiny)c+=3;
+ G.coinsRun+=c;flyCoin(p.lx,ty+p.h,c);
+ SFX.squish(G.combo);vib(perfect?20:12);
+ burst(p.lx,ty+4,s.col,perfect?14:7);
+ const z=zoneOf(G.floor);if(z!==G.lastZone){G.lastZone=z;G.zoneShow={t:2.2,z}}
+ if(G.mode==='level'&&G.floor>=G.lvl.n){winLevel();return}
+ if(dropsLeft()<=0){G.failReason='drops';endRun(false);return}
+ if(G.floor%10===0)openPick();
+}
+
+function lean(){ // average local offset of the tower's mass (relative to base center)
+ if(!G.tower.length)return 0;let m=0,sx=0;for(const p of G.tower){const w=p.s.trait==='heavy'?1.5:1;m+=w;sx+=(p.lx-240)*w}return sx/m}
+
+function endRun(toppled){
+ if(G.state!=='play')return;
+ G.state='end';gp(false);
+ if(toppled){const dir=Math.sign(Math.sin(G.phase)||1);G.topple={t:0,dir};SFX.fall();G.shake=12;
+  // the top of the tower spills off, one squishy after another
+  const n=Math.min(G.tower.length,16);G.spill=[];
+  for(let i=0;i<n;i++){const p=G.tower[G.tower.length-1-i];p.x=p.lx+swayAt(p.y+p.h/2);
+   p.vx=dir*(140+Math.random()*160)*(1-i/24);p.vy=120+Math.random()*260-i*12;p.vr=dir*(2+Math.random()*4);p.delay=i*0.06;G.lost.push(p);G.spill.push(p)}
+  G.tower.length-=n}
+ updSkills();
+ G.endTop=toppled;
+ setTimeout(()=>{if(G.state!=='end')return;if(!G.revived&&G.floor>=(G.lvl?Math.max(3,Math.ceil(G.lvl.n*0.4)):8))openRevive();else finishRun()},toppled?1500:900);
+}
+let revTimer=null;
+function openRevive(){let n=6;const from=G.floor;
+ $('revS').textContent=T('revS',{n:from});$('revGo').textContent=T('revGo');
+ const tick=()=>{$('revNo').textContent=T('noThanks',{n});if(n--<=0){closeRev();finishRun()}};tick();
+ clearInterval(revTimer);revTimer=setInterval(tick,1000);showLayer('revL');
+ if(G.auto)setTimeout(()=>{if(!$('revL').hidden){closeRev();finishRun()}},200)}
+function closeRev(){clearInterval(revTimer);revTimer=null}
+$('revNo').onclick=()=>{closeRev();finishRun()};
+$('revGo').onclick=()=>{closeRev();Ads.rewarded(ok=>{if(ok)revive();else finishRun()})};
+function revive(){
+ G.revived=true;G.state='play';
+ if(G.endTop&&G.spill){G.lost=G.lost.filter(q=>!G.spill.includes(q));for(let i=G.spill.length-1;i>=0;i--){const q=G.spill[i];q.rot=0;q.vx=q.vy=q.vr=0;q.delay=0;q.mood=1.2;q.sqv=-5;G.tower.push(q)}
+  let y=BASE.h;for(const q of G.tower){q.y=y;y+=q.h}G.spill=null;G.topple=null;G.shake=0;burst(topLocalX(),topY(),'#ffffff',18)}
+ G.sway=0;G.hearts=Math.max(G.hearts,2);G.combo=0;G.falling=null;if(G.failReason==='drops'){G.extraDrops+=6;G.failReason=''}if(!G.hook.piece){G.hook.piece=mkPiece(nextSpecies());G.hook.cool=0.3}
+ showLayer(null);updSkills();SFX.pick();gp(true);
+}
+function endTut(){const first=!tutDone;if(first){tutDone=true;store.set('tutDone',true);store.set('firstBox',true);hideTip()}return first}
+/* ---- level win / fail ---- */
+function winLevel(){G.state='win';gp(false);G.sway*=0.3;SFX.win();vib(60);
+ for(let k=0;k<5;k++)setTimeout(()=>burst(topLocalX()+(Math.random()-0.5)*260,topY()+40+Math.random()*120,['#ff7aa8','#ffc83d','#6fd3b5','#7fb6ff','#c48bff'][k],18),k*120);
+ pop(topLocalX(),topY()+150,T('win'),'#ff5ca0',1.6);setTimeout(()=>finishLevel(true),1300)}
+function finishLevel(won){
+ const first=endTut(),L=G.lvl,i=G.lvIdx;missAdd('runs',1);missMax('floor',G.floor);runsDone++;
+ let earned=G.coinsRun;const lines=[];let st=0;
+ if(won){st=1+(G.lostHearts===0?1:0)+(G.perfN>=L.perf?1:0);const prev=LP[i]||0;
+  if(!prev){const fc=20+i*3;earned+=fc;lines.push(T('firstClr',{c:fc}))}
+  if(st>prev){const ns=(st-prev)*15;earned+=ns;lines.push(T('newStar',{c:ns}));LP[i]=st;store.set('lvp',LP)}}
+ coins+=earned;store.set('coins',coins);G.earned=earned;G.lvWon=won;
+ $('leT').textContent=won?(i===LEVELS.length-1?T('allClear'):T('win')):T('fail');
+ $('leStars').innerHTML=won?[0,1,2].map(k=>`<span class="${k<st?'on':''}" style="animation-delay:${0.15+k*0.25}s">★</span>`).join(''):'';
+ $('leStars').hidden=!won;
+ $('leSub').textContent=won?T('lvN',{n:i+1}):(G.failReason==='drops'?T('failDrops'):T('failLeft',{n:Math.max(1,L.n-G.floor)}));
+ $('leRew').textContent=['🪙 +'+G.coinsRun].concat(lines).join(' · ');$('leTotal').textContent=coins;
+ $('leHint').hidden=!first;$('leHint').textContent=T('tut7');
+ const d=$('leDouble');d.hidden=earned<10;d.textContent=T('double',{c:earned});
+ $('leNext').textContent=won?(i<LEVELS.length-1?T('next'):T('map')):T('retry');
+ const bx=$('leBox');bx.hidden=!freeReady()&&coins<BOX_COST;bx.textContent=freeReady()?'🎁 '+T('freeBox'):T('boxCost',{c:BOX_COST});bx.classList.toggle('pulse',first);
+ if(won)[0,1,2].forEach(k=>{if(k<st)setTimeout(()=>tone(880+k*220,0,0.15,'triangle',0.14),400+k*250)});
+ updBoxBtn();showLayer('lvEnd')}
+$('leDouble').onclick=()=>{Ads.rewarded(ok=>{if(!ok)return;coins+=G.earned;store.set('coins',coins);$('leTotal').textContent=coins;$('leDouble').hidden=true;SFX.reveal(0);updBoxBtn()})};
+$('leNext').onclick=()=>{const i=G.lvIdx;if(G.lvWon){if(i<LEVELS.length-1)adBreak(()=>openStart('level',i+1));else openMap()}else adBreak(()=>openStart('level',i))};
+$('leMap').onclick=()=>openMap();$('leHome').onclick=()=>goTitle();
+$('leBox').onclick=()=>{$('leBox').classList.remove('pulse');openBox('lvEnd')};
+function finishRun(){
+ if(G.mode==='level'){finishLevel(false);return}
+ const firstRun=endTut();runsDone++;
+ $('overHint').hidden=!firstRun;$('overHint').textContent=T('tut7');$('oBox').classList.toggle('pulse',firstRun);
+ const fl=G.floor,prevBest=best,isBest=fl>best;if(isBest){best=fl;store.set('best',best)}
+ coins+=G.coinsRun;store.set('coins',coins);missMax('floor',fl);missAdd('runs',1);
+ if(fl>weekBest()){WK={k:weekKey(),b:fl};store.set('wk',WK)}
+ $('oRank').textContent=(passedN?T('lbPassN',{n:passedN})+' · ':'')+rankText().replace('🏆 ','🏆 ');
+ $('overT').textContent=isBest&&fl>0?T('newBest'):(G.endTop?T('overTop'):T('over'));
+ $('oFloor').textContent=fl;$('oBest').textContent=best;$('oCoin').textContent=G.coinsRun;$('oTotal').textContent=coins;
+ $('oNear').textContent=!isBest&&prevBest-fl>0&&prevBest-fl<=12?T('near',{n:prevBest-fl}):'';
+ const d=$('oDouble');d.hidden=G.coinsRun<10;d.disabled=false;d.textContent=T('double',{c:G.coinsRun});
+ updBoxBtn();showLayer('over');
+}
+$('oAgain').onclick=()=>adBreak(()=>openStart('endless'));
+$('oDouble').onclick=()=>{if(G.doubled)return;Ads.rewarded(ok=>{if(!ok)return;G.doubled=true;coins+=G.coinsRun;store.set('coins',coins);$('oTotal').textContent=coins;$('oCoin').textContent=G.coinsRun*2;$('oDouble').hidden=true;SFX.reveal(0);updBoxBtn()})};
+
+/* ads: Poki / CrazyGames rewarded video; the GitHub test build just skips */
+const Ads={busy:false,rewarded(cb){if(this.busy||adActive)return;this.busy=true;const wasOn=gpOn;gp(false);adOn();const done=ok=>{this.busy=false;adOff();audioOn();if(wasOn&&G.state==='play')gp(true);cb(ok)};
+ try{if(window.PokiSDK&&PokiSDK.rewardedBreak){audioOff();PokiSDK.rewardedBreak().then(ok=>done(!!ok),()=>done(false));return}
+  const cg=window.CrazyGames&&window.CrazyGames.SDK;if(cg&&cg.ad){cg.ad.requestAd('rewarded',{adStarted:()=>audioOff(),adFinished:()=>done(true),adError:()=>done(false)});return}}catch(e){}
+ if(BUILD!=='test'){done(false);return}
+ $('adL').hidden=false;setTimeout(()=>{$('adL').hidden=true;done(true)},G.auto?10:1200)}};
+function audioOff(){adMute=true;try{AC&&AC.suspend()}catch(e){}}
+function audioOn(){adMute=false;try{AC&&AC.resume()}catch(e){}}
+// interstitial between runs: the SDK decides whether an ad really plays
+let adActive=false;function adOn(){adActive=true;$('adBlock').hidden=false}function adOff(){adActive=false;$('adBlock').hidden=true}
+function adBreak(cb){if(adActive)return;const pk=window.PokiSDK;if(runsDone>0&&pk&&pk.commercialBreak){let fin=false;adOn();const go=()=>{if(fin)return;fin=true;adOff();audioOn();cb()};
+  try{pk.commercialBreak(()=>audioOff()).then(go,go);return}catch(e){adOff()}}cb()}
+let gpOn=false;
+function gp(on){if(on===gpOn)return;gpOn=on;try{if(window.PokiSDK)on?PokiSDK.gameplayStart():PokiSDK.gameplayStop()}catch(e){}
+ try{const cg=window.CrazyGames&&CrazyGames.SDK;if(cg&&cg.game)on?cg.game.gameplayStart():cg.game.gameplayStop()}catch(e){}}
+let paused=false,userPaused=false;
+document.addEventListener('visibilitychange',()=>{if(document.hidden){if(G.state==='play'&&!G.auto)pauseGame();paused=true;gp(false);try{AC&&AC.suspend()}catch(e){}}
+ else{paused=false;last=performance.now();if(!adMute)try{AC&&AC.resume()}catch(e){};if(G.state==='play'&&!userPaused)gp(true)}});
+
+/* ---- leaderboard: rival squishies + your own bests (weekly reset, like Jump Jump) ---- */
+const RIVALS=[['mochi',5],['frog',9],['dump',13],['shiba',17],['oni',21],['cro',26],['sushi',31],['jelly',36],['ghost',41],['axo',47],['cow',53],['shark',60],['rpanda',67],['capy',75],['toast',83],['donut',92],['cat',102],['peng',113],['boba',125],['bunny',138],['uni',152],['dragon',168],['gcapy',185],['cosmo',205]];
+function weekKey(){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7));return d.toDateString()}
+function hash(str){let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}return((h>>>0)%10000)/10000}
+let WK=store.get('wk',{k:'',b:0});function weekBest(){return WK.k===weekKey()?WK.b:0}
+function rivalList(all){const wk=weekKey();return RIVALS.map(([id,b])=>({id,score:all?b:Math.max(3,Math.round(b*(0.88+0.24*hash(wk+id))))}))}
+function myRank(score,all){return 1+rivalList(all).filter(r=>r.score>score).length}
+let runTargets=[],passedN=0,passFx=null;
+function buildTargets(){runTargets=rivalList(false).map(r=>({id:r.id,score:r.score,name:'s_'+r.id}));
+ const wb=weekBest();if(wb>0)runTargets.push({self:'lbWB',score:wb,id:lastOwned()});if(best>0&&best!==wb)runTargets.push({self:'lbAB',score:best,id:lastOwned()});
+ runTargets.sort((a,b)=>a.score-b.score);passedN=0;passFx=null}
+function lastOwned(){return owned[owned.length-1]||'capy'}
+function nextTarget(){for(const t of runTargets)if(t.score>=G.floor&&!t.passed)return t;return null}
+function checkPass(){for(const t of runTargets){if(!t.passed&&G.floor>t.score){t.passed=true;if(t.score<1)continue;if(!t.self)passedN++;
+  passFx={t:0,id:t.id,self:t.self};const nm=t.self?T(t.self):T(t.name);pop(topLocalX(),topY()+90,T('lbPass',{n:nm}),t.self?'#3fbf88':'#ffb627',1.15);SFX.pass()}}}
+function heightOfFloor(f){if(G.tower.length>=f){let y=BASE.h;for(let i=0;i<f;i++)y+=G.tower[i].h;return y}return topY()+(f-G.tower.length)*68}
+function rankText(){const wb=weekBest(),r=myRank(wb,false);return wb<=0?'🏆 '+T('lb')+' ›':(r===1?'🏆 '+T('lbFirst')+' ›':'🏆 '+T('lbRank',{n:r})+' ›')}
+let lbFrom='title',lbAll=false;
+function openLb(from){if(from)lbFrom=from;const tabs=$('lbTabs');tabs.innerHTML='';
+ [[false,'lbWeek'],[true,'lbAll']].forEach(([a,k])=>{const b=document.createElement('button');b.className='tab'+(a===lbAll?' on':'');b.textContent=T(k);b.onclick=()=>{lbAll=a;openLb()};tabs.appendChild(b)});
+ const my=lbAll?best:weekBest();const rows=rivalList(lbAll).map(r=>({id:r.id,score:r.score,nm:T('s_'+r.id)}));rows.push({id:lastOwned(),score:my,nm:T('lbYou'),me:true});
+ rows.sort((a,b)=>b.score-a.score||(a.me?-1:b.me?1:0));const box=$('lbList');box.innerHTML='';let meEl=null;
+ rows.forEach((r,i)=>{const d=document.createElement('div');d.className='lbr'+(r.me?' me':'');const rk=i<3?['🥇','🥈','🥉'][i]:String(i+1);
+  d.innerHTML=`<span class="rk">${rk}</span>`;d.appendChild(thumb(r.id,40,false,false));const nm=document.createElement('span');nm.className='nm';nm.textContent=r.nm;d.appendChild(nm);
+  const sc=document.createElement('span');sc.className='sc';sc.textContent=r.score;d.appendChild(sc);box.appendChild(d);if(r.me)meEl=d});
+ showLayer('lbL');if(meEl)meEl.scrollIntoView({block:'center'})}
+$('lbBack').onclick=()=>{showLayer(lbFrom);if(lbFrom==='title')applyText()};
+$('tRank').onclick=()=>openLb('title');$('oRank').onclick=()=>openLb('over');
+
+/* ---- start card (goal, rules, boosters) ---- */
+const BOOST=[{id:'heart',ic:'💗',price:40},{id:'blink',ic:'✨',price:50},{id:'wave',ic:'💥',price:50},{id:'glue',ic:'🍯',price:60}];
+let pend=null,selB={};
+function openStart(mode,idx){pend={mode,idx};selB={};
+ if(mode==='level'){const L=LEVELS[idx];$('stChap').textContent=T('chapN',{n:(idx/10|0)+1})+' · '+T('ser_'+L.ser);$('stT').textContent=(L.boss?'👑 ':'')+T('lvN',{n:idx+1});
+  $('stGoal').textContent='🏁 '+T('goal',{n:L.n});
+  const r=[];if(L.wind)r.push('🌬️ '+T('r_wind'));if(L.fast)r.push('⚡ '+T('r_fast'));if(L.narrow)r.push('↔️ '+T('r_narrow'));if(L.drops)r.push('🧸 '+T('r_drops',{n:L.drops}));if(L.hearts)r.push('💔 '+T('r_hearts',{n:L.hearts}));
+  $('stRules').innerHTML=r.map(x=>`<span class="chip">${x}</span>`).join('');const got=LP[idx]||0;
+  $('stStars').innerHTML=[T('st1'),T('st2'),T('st3',{n:L.perf})].map((x,k)=>`<span class="chip st${k<got?' got':''}">${'★'.repeat(k+1)} ${x}</span>`).join('')}
+ else{$('stChap').textContent=T('lbReset');$('stT').textContent='🏆 '+T('endless');$('stGoal').textContent=weekBest()?T('lbWB')+' '+weekBest()+' · '+rankText().replace('🏆 ','').replace(' ›',''):T('best')+' '+best;$('stRules').innerHTML='';$('stStars').innerHTML=''}
+ drawBoosts();showLayer('startL')}
+function drawBoosts(){const box=$('stBoost');box.innerHTML='';
+ BOOST.forEach(b=>{const n=INV[b.id]||0;const d=document.createElement('button');d.className='bt'+(selB[b.id]?' sel':'');d.title=T('b_'+b.id);
+  d.innerHTML=`<b>${b.ic}</b>${n?'×'+n:`<i>🪙${b.price}</i>`}${selB[b.id]?'<em>✓</em>':''}`;
+  d.onclick=()=>{if(selB[b.id]){selB[b.id]=false}else if(n>0){selB[b.id]=true}else if(coins>=b.price){coins-=b.price;store.set('coins',coins);INV[b.id]=1;store.set('inv',INV);selB[b.id]=true;SFX.coin()}else{d.animate([{transform:'translateX(-4px)'},{transform:'translateX(4px)'},{transform:'none'}],{duration:200})}drawBoosts()};box.appendChild(d)})}
+function goStart(){if(!pend)return;const b={};for(const k in selB)if(selB[k]&&INV[k]>0){INV[k]--;b[k]=1}store.set('inv',INV);startRun({mode:pend.mode,idx:pend.idx,boost:b})}
+$('stGo').onclick=goStart;$('stBack').onclick=()=>goTitle();
+/* ---- level map ---- */
+let mapCh=-1;
+function openMap(ch){if(ch!=null)mapCh=ch;if(mapCh<0)mapCh=curLevel()/10|0;const tabs=$('mapTabs');tabs.innerHTML='';
+ [0,1,2].forEach(c=>{const b=document.createElement('button');const open=lvOpen(c*10);b.className='tab'+(c===mapCh?' on':'')+(open?'':' lock');b.textContent=(open?'':'🔒 ')+T('chapN',{n:c+1})+' · '+T('ser_'+['pals','cafe','dream'][c]);b.onclick=()=>{if(open)openMap(c)};tabs.appendChild(b)});
+ const tot=LP.reduce((a,b)=>a+(b||0),0);$('mapStars').textContent='⭐ '+tot+' / '+LEVELS.length*3;
+ const g=$('lvGrid');g.innerHTML='';const cur=curLevel();
+ for(let i=mapCh*10;i<mapCh*10+10;i++){const L=LEVELS[i],open=lvOpen(i),st=LP[i]||0;const b=document.createElement('button');
+  b.className='lvb'+(L.boss?' boss':'')+(open?'':' lock')+(i===cur&&!LP[i]?' cur':'');b.innerHTML=(open?(L.boss?'👑':'')+(i+1):'🔒')+`<small>${open?'★'.repeat(st)+'☆'.repeat(3-st):''}</small>`;
+  b.onclick=()=>{if(open)openStart('level',i)};g.appendChild(b)}
+ showLayer('mapL')}
+$('mapBack').onclick=()=>goTitle();
+/* ---- shop: boosters + cushions ---- */
+const SHOPB=[{id:'pink',price:0},{id:'garden',set:'pals'},{id:'cake',set:'cafe'},{id:'moon',set:'dream'},{id:'melon',price:150},{id:'cookie',price:200},{id:'cloud2',price:250},{id:'rainbow',price:400}];
+let shTab=0,shFrom='title';
+function openShop(from){if(from)shFrom=from;$('shCoins').textContent=coins;const tabs=$('shTabs');tabs.innerHTML='';
+ [T('boost'),T('tabBases')].forEach((x,k)=>{const b=document.createElement('button');b.className='tab'+(k===shTab?' on':'');b.textContent=x;b.onclick=()=>{shTab=k;openShop()};tabs.appendChild(b)});
+ const L=$('shList');L.innerHTML='';
+ if(shTab===0){BOOST.forEach(b=>{const d=document.createElement('div');d.className='shr';
+   d.innerHTML=`<span class="ic">${b.ic}</span><div class="t">${T('c_'+b.id)} ×${INV[b.id]||0}<small>${T('b_'+b.id)}</small></div>`;
+   const bt=document.createElement('button');bt.textContent=T('buy')+' 🪙'+b.price;bt.disabled=coins<b.price;bt.onclick=()=>{if(coins<b.price)return;coins-=b.price;store.set('coins',coins);INV[b.id]=(INV[b.id]||0)+1;store.set('inv',INV);SFX.coin();openShop()};
+   d.appendChild(bt);L.appendChild(d)})}
+ else{const g=document.createElement('div');g.className='skgrid';SHOPB.forEach(x=>{const has=BASES.includes(x.id)||(x.set&&serDone(x.set));const d=document.createElement('div');d.className='sk'+(skin===x.id?' on':'');
+   const cvs=document.createElement('canvas');cvs.width=240;cvs.height=80;const c=cvs.getContext('2d');paintBase(c,20,22,200,40,1,x.id);d.appendChild(cvs);
+   const nm=document.createElement('div');nm.textContent=T('sk_'+x.id);d.appendChild(nm);const bt=document.createElement('button');
+   if(has){bt.textContent=skin===x.id?T('using'):T('equip');bt.className='use';bt.disabled=skin===x.id;bt.onclick=()=>{skin=x.id;store.set('skin',skin);openShop()}}
+   else if(x.set){bt.textContent=T('needSet',{r:T('ser_'+x.set)});bt.disabled=true}
+   else{bt.textContent=T('buy')+' 🪙'+x.price;bt.disabled=coins<x.price;bt.onclick=()=>{if(coins<x.price)return;coins-=x.price;store.set('coins',coins);BASES.push(x.id);store.set('bases',BASES);skin=x.id;store.set('skin',skin);SFX.reveal(1);openShop()}}
+   d.appendChild(bt);g.appendChild(d)});L.appendChild(g)}
+ showLayer('shopL')}
+$('shBack').onclick=()=>{showLayer(shFrom);if(shFrom==='title')applyText()};
+
+/* daily missions */
+const MDEF={floor:{g:[30,45,60],r:[40,60,90]},perf:{g:[15,30,50],r:[40,60,80]},combo:{g:[4,6,8],r:[40,60,90]},runs:{g:[3,5],r:[30,50]},box:{g:[1,3],r:[30,60]},
+ cafe:{g:[10,25],r:[40,70]},pals:{g:[10,25],r:[40,70]},dream:{g:[10,25],r:[50,80]}};
+const today=()=>new Date().toDateString();
+let MS=store.get('miss',null);
+function ensureMiss(){if(MS&&MS.d===today())return;
+ let ids=Object.keys(MDEF).filter(k=>k!=='dream'||seriesOpen('dream'));for(let i=ids.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[ids[i],ids[j]]=[ids[j],ids[i]]}
+ if(ids.indexOf('pals')>=0&&ids.indexOf('cafe')>=0&&ids.indexOf('pals')<3&&ids.indexOf('cafe')<3)ids.splice(ids.indexOf('cafe'),1);
+ MS={d:today(),l:ids.slice(0,3).map(id=>({id,t:id==='floor'?(best>=70?2:best>=45?1:0):(Math.random()<0.6?0:1),p:0,c:false}))};store.set('miss',MS)}
+function mGoal(m){return MDEF[m.id].g[Math.min(m.t,MDEF[m.id].g.length-1)]}
+function missAdd(id,n){if(!id)return;ensureMiss();let ch=0;for(const m of MS.l)if(m.id===id&&!m.c&&m.p<mGoal(m)){m.p=Math.min(mGoal(m),m.p+n);ch=1}if(ch)store.set('miss',MS)}
+function missMax(id,v){ensureMiss();let ch=0;for(const m of MS.l)if(m.id===id&&!m.c&&v>m.p){m.p=Math.min(mGoal(m),v);ch=1}if(ch)store.set('miss',MS)}
+function missReady(){ensureMiss();return MS.l.some(m=>!m.c&&m.p>=mGoal(m))}
+function openMiss(){ensureMiss();const L=$('missList');L.innerHTML='';
+ MS.l.forEach(m=>{const g=mGoal(m),rw=MDEF[m.id].r[Math.min(m.t,MDEF[m.id].r.length-1)];const d=document.createElement('div');d.className='mis';
+  d.innerHTML=`<div class="t">${T('m_'+m.id,{n:g})}<div class="bar"><i style="width:${Math.round(100*m.p/g)}%"></i></div><span class="rw">${m.p}/${g} · 🪙 ${rw}</span></div>`;
+  const b=document.createElement('button');b.textContent=m.c?'✓':T('claim');b.disabled=m.c||m.p<g;
+  b.onclick=()=>{if(m.c||m.p<g)return;m.c=true;coins+=rw;store.set('coins',coins);store.set('miss',MS);SFX.reveal(0);openMiss();applyText()};d.appendChild(b);L.appendChild(d)});
+ showLayer('missL')}
+$('bMiss').onclick=openMiss;$('missBack').onclick=goHome;
+
+/* daily gift: 7-day streak */
+const DAILY=[30,40,50,60,'box',80,'box'];
+let DL=store.get('dly',{last:'',streak:0});
+function yesterday(){const d=new Date();d.setDate(d.getDate()-1);return d.toDateString()}
+function dailyReady(){return DL.last!==today()}
+function dailyIdx(){const st=dailyReady()?(DL.last===yesterday()?DL.streak+1:1):DL.streak;return(st-1)%7}
+function openDaily(){const idx=dailyIdx(),ready=dailyReady();const box=$('days');box.innerHTML='';
+ DAILY.forEach((r,i)=>{const d=document.createElement('div');d.className='day'+(i<idx||(i===idx&&!ready)?' got':'')+(i===idx&&ready?' now':'');
+  d.innerHTML=`${T('dayN',{n:i+1})}<b>${r==='box'?'🎁':'🪙'+r}</b>`;box.appendChild(d)});
+ $('dailyS').textContent=ready?T('dailyS'):T('dailyGot');const g=$('dailyGo');g.textContent=T('claim');g.disabled=!ready;showLayer('dailyL')}
+$('dailyGo').onclick=()=>{if(!dailyReady())return;const idx=dailyIdx();DL={last:today(),streak:idx+1};store.set('dly',DL);
+ const r=DAILY[idx];if(r==='box'){tokens++;store.set('tokens',tokens)}else{coins+=r;store.set('coins',coins)}SFX.reveal(1);openDaily();applyText()};
+$('bDaily').onclick=openDaily;$('dailyBack').onclick=goHome;
+function goHome(){showLayer('title');applyText()}
+
+/* cards */
+const CARDS=[
+ {id:'mag',ic:'🧲',c:'#ff7a7a',max:2},{id:'glue',ic:'🍯',c:'#ffb627',max:2},{id:'slow',ic:'🐌',c:'#6fd3b5',max:2},
+ {id:'heart',ic:'💗',c:'#ff7aa8',max:3},{id:'sticky',ic:'🐾',c:'#b08cff',max:2},{id:'wave',ic:'💥',c:'#ff9d4d',max:3},
+ {id:'blink',ic:'✨',c:'#8b7bd8',max:3},{id:'aura',ic:'🌟',c:'#ffc83d',max:2},{id:'wide',ic:'🎯',c:'#5ab8ff',max:2},{id:'snack',ic:'🍪',c:'#e8a64c',max:999}];
+let offer=[];
+function openPick(){
+ const pool=CARDS.filter(c=>lv(c.id)<c.max&&!(c.id==='heart'&&G.hearts>=G.maxHearts));
+ for(let i=pool.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[pool[i],pool[j]]=[pool[j],pool[i]]}
+ const sn=pool.findIndex(c=>c.id==='snack');if(pool.length>3&&sn>=0&&sn<3)pool.push(pool.splice(sn,1)[0]); // snack only fills gaps
+ offer=pool.slice(0,3);G.state='pick';gp(false);
+ $('pickT').textContent=T('pick',{n:G.floor});$('pickHint').hidden=!(!tutDone&&!tutSeen.tut6);if(!tutDone){$('pickHint').textContent=T('tut6');tutSeen.tut6=1}
+ const box=$('cards');box.innerHTML='';
+ offer.forEach((c,i)=>{const d=document.createElement('div');d.className='card';d.style.setProperty('--c',c.c);
+  const l=lv(c.id);d.innerHTML=`<div class="ic">${c.ic}</div><div class="nm">${T('c_'+c.id)}${l&&!['heart','wave','blink','snack'].includes(c.id)?' '+'★'.repeat(l+1):''}</div><div class="ds">${T('d_'+c.id)}</div><span class="k">${i+1}</span>`;
+  d.onclick=()=>choose(i);box.appendChild(d)});
+ setTimeout(()=>{if(G.state==='pick')showLayer('pick')},350);
+ if(G.auto)setTimeout(()=>choose(0),500);
+}
+function choose(i){
+ if(G.state!=='pick'||!offer[i])return;const c=offer[i];
+ G.card[c.id]=(G.card[c.id]||0)+1;
+ if(c.id==='heart')G.hearts=Math.min(G.maxHearts,G.hearts+1);
+ if(c.id==='snack'){G.coinsRun+=15;flyCoin(topLocalX(),topY(),8)}
+ if(c.id==='wave')G.waves+=2;if(c.id==='blink')G.blinks+=2;
+ SFX.pick();showLayer(null);G.state='play';updSkills();gp(true);
+}
+function useWave(){if(G.state!=='play'||G.waves<=0)return;G.waves--;G.sway*=0.25;G.shake=6;SFX.wave();
+ const y=topY();ringBig(240,y*0.5);updSkills()}
+function useBlink(){if(G.state!=='play'||G.blinks<=0||G.blinkArm)return;G.blinks--;G.blinkArm=true;SFX.blink();updSkills()}
+
+/* fx */
+function pop(x,y,text,col,sz){G.pops.push({x,y,text,col,sz:sz||1,t:0})}
+function burst(x,y,col,n){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,v=80+Math.random()*220;G.parts.push({x,y,vx:Math.cos(a)*v,vy:Math.abs(Math.sin(a))*v+60,t:0,life:0.6+Math.random()*0.4,col,r:3+Math.random()*5,kind:'dot'})}}
+function ring(x,y,w){G.parts.push({x,y,t:0,life:0.45,kind:'ring',r:w*0.6})}
+function ringBig(x,y){G.parts.push({x,y,t:0,life:0.7,kind:'ring',r:300,big:true})}
+function flyCoin(x,y,n){for(let i=0;i<Math.min(n,8);i++)G.parts.push({x:x+(Math.random()-0.5)*40,y:y+10,vx:(Math.random()-0.5)*120,vy:260+Math.random()*120,t:0,life:0.7,kind:'coin',r:7});if(n>1)setTimeout(SFX.coin,80)}
+function vib(ms){try{if(navigator.vibrate)navigator.vibrate(ms)}catch(e){}}
+
+/* ================= update ================= */
+function update(dt){
+ G.time+=dt;
+ // jiggle springs
+ const all=G.tower.concat(G.hook.piece?[G.hook.piece]:[],G.falling?[G.falling]:[]);
+ for(const p of all){p.sqv+=(-p.sq*260-p.sqv*9)*dt;p.sq+=p.sqv*dt*0.12;p.blinkT-=dt;if(p.blinkT<0)p.blinkT=2+Math.random()*3;p.mood=Math.max(0,p.mood-dt)}
+ if(G.state==='play'||G.state==='pick'){
+  if(G.state==='play'){
+   G.hook.t+=dt;if(G.hook.cool>0){G.hook.cool-=dt;if(G.hook.cool<=0&&!G.hook.piece&&dropsLeft()>0){G.hook.piece=mkPiece(nextSpecies())}}
+   // sway dynamics
+   const w=2*Math.PI/(1.6+Math.min(2.2,topY()/900));
+   G.phase+=w*dt;
+   G.sway=Math.max(0,G.sway-dt*(2.2+0.05*G.sway)*Math.max(0.3,1-G.floor/140)*(1+0.15*lv('glue')));
+   if(G.sway>120){endRun(true)}
+   if(G.sway>80&&Math.random()<dt*1.5)SFX.wobble();
+   if(G.sway>22&&tipT<=0)tutOnce('tut4',3.2,true);
+   // wind
+   if(G.lvl){if(G.lvl.wind){G.windT-=dt;if(G.windT<=0){G.windT=3.5+Math.random()*3;G.wind=(Math.random()<0.5?-1:1)*G.lvl.wind*(0.7+Math.random()*0.6)}}else G.wind=0}
+   else if(zoneOf(G.floor)>=2){G.windT-=dt;if(G.windT<=0){G.windT=6+Math.random()*4;G.wind=(Math.random()<0.5?-1:1)*(30+G.floor*0.9+Math.random()*50)*(Math.random()<0.25?0:1)}}else G.wind=0;
+   // falling piece
+   const f=G.falling;
+   if(f){f.vy-=2600*dt;f.vx+=G.wind*dt;f.x+=f.vx*dt;f.y+=f.vy*dt;
+    if(f.y<=topY()){f.y=topY();G.falling=null;land(f)}}
+   if(G.auto)autoPlay(dt);
+  }
+ }
+ // lost pieces
+ for(const p of G.lost){if(p.delay>0){p.delay-=dt;continue}p.vy=(p.vy||0)-2200*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.rot+=p.vr*dt}
+ G.lost=G.lost.filter(p=>p.y>G.cam-600);
+ // topple
+ if(G.topple){G.topple.t+=dt}
+ // hook centre and camera follow the tower top sideways
+ G.hookC+=(topLocalX()-G.hookC)*Math.min(1,dt*2.5);
+ G.camX+=((G.state==='title'?0:topLocalX()-240)*0.7-G.camX)*Math.min(1,dt*2);
+ // camera
+ const target=Math.max(0,topY()-(VH-GROUND)*0.42);
+ G.cam+=(target-G.cam)*Math.min(1,dt*3.2);
+ G.shake=Math.max(0,G.shake-dt*30);
+ for(const q of G.pops)q.t+=dt;G.pops=G.pops.filter(q=>q.t<1.1);
+ for(const q of G.parts){q.t+=dt;if(q.kind!=='ring'){q.vy-=900*dt;q.x+=q.vx*dt;q.y+=q.vy*dt}}G.parts=G.parts.filter(q=>q.t<q.life);
+ if(G.zoneShow){G.zoneShow.t-=dt;if(G.zoneShow.t<=0)G.zoneShow=null}
+}
+
+// test bot: aims well, then taps a bit early/late like a person (?auto=1&sk=0.06)
+let botAim=0;
+function gauss(){return Math.sqrt(-2*Math.log(Math.random()+1e-9))*Math.cos(2*Math.PI*Math.random())}
+function autoPlay(dt){
+ if(!G.hook.piece||G.falling)return;
+ if(G.sway>75&&G.waves>0)useWave();
+ if(G.blinks>0&&G.sway>45&&!G.blinkArm)useBlink();
+ const h=hookPos();const tX=topLocalX()+swayAt(topY());
+ const dy=pivotY()-ROPE-G.hook.piece.h-topY();const t=Math.sqrt(Math.max(0,2*dy/2600));
+ const px=h.x+h.vx*0.35*t;
+ if(Math.abs(px-tX)<4){G.hook.t+=gauss()*G.botSkill;drop()}
+}
+/* ================= render ================= */
+const ZC=[['#bfe9ff','#e9fbff'],['#9fd0ff','#ffe9f2'],['#c6d9ff','#f5f0ff'],['#ff9e9e','#ffd59a'],['#1b1640','#3d2d7a']];
+function lerpC(a,b,t){const pa=parseInt(a.slice(1),16),pb=parseInt(b.slice(1),16);const r=((pa>>16)+(((pb>>16)-(pa>>16))*t))|0,g=(((pa>>8)&255)+((((pb>>8)&255)-((pa>>8)&255))*t))|0,bl=((pa&255)+(((pb&255)-(pa&255))*t))|0;return`rgb(${r},${g},${bl})`}
+function skyAt(y){const f=y/66;const zs=[0,12,25,40,60];let i=0;while(i<4&&f>zs[i+1])i++;const t=i<4?Math.min(1,Math.max(0,(f-zs[i])/(zs[i+1]-zs[i]))):0;const j=Math.min(4,i+1);return[lerpC(ZC[i][0],ZC[j][0],t*t),lerpC(ZC[i][1],ZC[j][1],t*t)]}
+function wx(x){return OX+(x-G.camX)*S}
+function wy(y){return CH-(GROUND*S)-(y-G.cam)*S}
+const clouds=[];for(let i=0;i<26;i++)clouds.push({x:Math.random()*1.6-0.3,y:600+Math.random()*5200,s:0.6+Math.random()*1.2,p:0.3+Math.random()*0.5});
+const bgStars=[];for(let i=0;i<160;i++)bgStars.push({x:Math.random(),y:2600+Math.random()*9000,r:Math.random()*1.8+0.4,p:0.2+Math.random()*0.3});
+
+function render(){
+ const c=ctx;c.setTransform(DPR,0,0,DPR,0,0);
+ const midY=G.cam+VH*0.5;const [top,bot]=skyAt(midY+VH*0.3),[,bot2]=skyAt(midY-VH*0.3);
+ const gr=c.createLinearGradient(0,0,0,CH);gr.addColorStop(0,top);gr.addColorStop(1,bot2||bot);c.fillStyle=gr;c.fillRect(0,0,CW,CH);
+ const sh=G.shake?(Math.random()-0.5)*G.shake:0;
+ c.save();c.translate(sh,0);
+ // stars
+ const starA=Math.min(1,Math.max(0,(G.cam-1800)/1400));
+ if(starA>0){c.fillStyle='#fff';for(const s of bgStars){const y=CH-(s.y-G.cam*s.p)*S*0.5;if(y<-5||y>CH+5)continue;c.globalAlpha=starA*(0.5+0.5*Math.sin(G.time*2+s.x*50));c.beginPath();c.arc(s.x*CW,y,s.r,0,7);c.fill()}c.globalAlpha=1}
+ // clouds
+ for(const k of clouds){const y=CH-(k.y-G.cam*k.p)*S*0.6;if(y<-80||y>CH+80)continue;const x=((k.x*CW+G.time*8*k.s)%(CW+300))-150;cloud(x,y,k.s*S*1.1,G.cam>3600?0.35:0.85)}
+ // ground
+ if(wy(0)<CH+40){const gy=wy(0);c.fillStyle='#8fd36f';c.beginPath();c.moveTo(0,gy+10);for(let x=0;x<=CW;x+=40)c.quadraticCurveTo(x+20,gy-4,x+40,gy+10);c.lineTo(CW,CH);c.lineTo(0,CH);c.fill();c.fillStyle='#7cc35d';c.fillRect(0,gy+28,CW,CH);
+  // bushes
+  for(let i=0;i<8;i++){const bx=(i*173+40)%CW;bush(bx,gy+8,S*(0.8+(i%3)*0.25))}}
+ // best marker
+ if(G.state!=='title'&&G.mode==='level')drawGoalLine();
+ if(G.state!=='title'&&G.mode!=='level')drawTargets();
+ if(best>0&&G.state!=='title'&&G.mode!=='level'){const by=heightOfFloor(best);if(by){const y=wy(by);if(y>-20&&y<CH){c.setLineDash([10*S,8*S]);c.strokeStyle='#ff5ca0aa';c.lineWidth=3*S;c.beginPath();c.moveTo(0,y);c.lineTo(CW,y);c.stroke();c.setLineDash([]);c.fillStyle='#ff5ca0';c.font=`900 ${15*S}px Nunito,sans-serif`;c.textAlign='left';c.fillText(T('best')+' '+best,wx(8),y-6*S)}}}
+ // tower
+ const tp=G.topple;
+ c.save();
+ // base cushion
+ drawBase();
+ const H=topY();const worried=G.sway>55;
+ for(let i=0;i<G.tower.length;i++){const p=G.tower[i];const x=p.lx+swayAt(p.y+p.h/2);const tilt=G.sway*Math.cos(G.phase)*0.0009*(p.y/Math.max(200,H))*-1+ (G.sway*Math.sin(G.phase)*0.0012*(p.y/Math.max(200,H)));drawPiece(p,x,p.y,tilt,worried?2:p.mood>0?1:0,1)}
+ c.restore();
+ // falling / lost
+ if(G.falling)drawPiece(G.falling,G.falling.x,G.falling.y,0,0,1);
+ for(const p of G.lost)drawPiece(p,p.x,p.y,p.rot,3,1);
+ // hook
+ if(G.state==='play'||G.state==='pick'){const h=hookPos();const py=pivotY();
+  c.strokeStyle='#5a4a6a';c.lineWidth=3*S;c.beginPath();c.moveTo(wx(G.hookC),wy(py));
+  const hx=G.hook.piece?h.x:h.x;c.lineTo(wx(hx),wy(py-ROPE));c.stroke();
+  c.fillStyle='#5a4a6a';c.beginPath();c.arc(wx(G.hookC),wy(py),7*S,0,7);c.fill();
+  // claw
+  c.strokeStyle='#5a4a6a';c.lineWidth=4*S;c.beginPath();c.arc(wx(hx),wy(py-ROPE)+6*S,9*S,Math.PI*1.1,Math.PI*1.9,true);c.stroke();
+  if(G.hook.piece){const p=G.hook.piece;drawPiece(p,hx,py-ROPE-p.h-2,(h.vx/900)*0.12,0,1);
+   if(!tutDone&&G.floor<8&&!G.blinkArm&&G.state==='play'){const pr=predictLand();if(pr){c.strokeStyle=pr.ok?'#3fbf88':'#ffffffcc';c.lineWidth=(pr.ok?5:3)*S;c.setLineDash([8*S,7*S]);c.beginPath();c.moveTo(wx(pr.px),wy(py-ROPE-p.h-4));c.lineTo(wx(pr.px),wy(topY()));c.stroke();c.setLineDash([]);
+     if(pr.ok){c.fillStyle='#3fbf88';c.beginPath();c.ellipse(wx(pr.px),wy(topY()),16*S,5*S,0,0,7);c.fill()}}}
+   if(G.blinkArm){c.strokeStyle='#8b7bd8';c.lineWidth=3*S;c.setLineDash([6*S,6*S]);const tx=topLocalX()+swayAt(topY());c.beginPath();c.moveTo(wx(tx),wy(py-ROPE-p.h));c.lineTo(wx(tx),wy(topY()));c.stroke();c.setLineDash([])}}
+ }
+ // particles
+ for(const q of G.parts){const k=q.t/q.life;
+  if(q.kind==='dot'){c.globalAlpha=1-k;c.fillStyle=q.col;c.beginPath();c.arc(wx(q.x),wy(q.y),q.r*S,0,7);c.fill()}
+  else if(q.kind==='coin'){c.globalAlpha=1-k*k;coinIcon(wx(q.x),wy(q.y),q.r*S)}
+  else{c.globalAlpha=(1-k)*0.8;c.strokeStyle=q.big?'#ff9d4d':'#ffffff';c.lineWidth=(q.big?10:5)*S*(1-k);c.beginPath();c.ellipse(wx(q.x),wy(q.y),q.r*S*(0.6+k),q.r*S*(0.6+k)*0.35,0,0,7);c.stroke()}}
+ c.globalAlpha=1;
+ // pops
+ c.textAlign='center';
+ for(const q of G.pops){const k=q.t/1.1;const y=wy(q.y)-k*60*S;const sc=q.sz*(k<0.15?0.6+k/0.15*0.5:1.1-0.1*k);c.globalAlpha=k>0.7?(1-k)/0.3:1;c.font=`900 ${28*S*sc}px Nunito,sans-serif`;c.lineWidth=6*S;c.strokeStyle='#fff';c.strokeText(q.text,wx(q.x),y);c.fillStyle=q.col;c.fillText(q.text,wx(q.x),y)}
+ c.globalAlpha=1;c.restore();
+ // HUD
+ if(G.state!=='title')hud();
+ // wobble vignette
+ if((G.state==='play')&&G.sway>60){const a=Math.min(0.45,(G.sway-60)/120)*(0.6+0.4*Math.sin(G.time*12));const vg=c.createRadialGradient(CW/2,CH/2,Math.min(CW,CH)*0.35,CW/2,CH/2,Math.max(CW,CH)*0.75);vg.addColorStop(0,'#ff3b6b00');vg.addColorStop(1,`rgba(255,59,107,${a})`);c.fillStyle=vg;c.fillRect(0,0,CW,CH)}
+}
+function drawTargets(){const c=ctx;let n=0;for(const t of runTargets){if(t.passed||t.self||t.score<=G.floor)continue;if(++n>3)break;
+  const y=wy(heightOfFloor(t.score));if(y<-40||y>CH+40)continue;const x=CW-34;
+  c.setLineDash([6,6]);c.strokeStyle='#ffb62799';c.lineWidth=2;c.beginPath();c.moveTo(x-60,y);c.lineTo(x-22,y);c.stroke();c.setLineDash([]);
+  c.fillStyle='#ffffffcc';c.beginPath();c.arc(x,y,22,0,7);c.fill();const s=SP[t.id];const k=34/Math.max(s.w,s.h*1.4);drawPiece({s,w:s.w,h:s.h,sq:0,blinkT:9},x,y+12,0,0,1,c,k);
+  c.font='900 13px Nunito,sans-serif';c.textAlign='center';c.lineWidth=4;c.strokeStyle='#fff';c.strokeText(t.score,x,y+36);c.fillStyle='#b47a00';c.fillText(t.score,x,y+36)}}
+function drawNextCard(){const t=nextTarget();const c=ctx;if(passFx){passFx.t+=1/60}
+ const w=Math.min(150,CW*0.34),h=58,x=CW-w-10,y=10;
+ if(t){c.fillStyle='#ffffffe6';rr(x,y,w,h,16);c.fill();c.strokeStyle=t.self?'#3fbf88':'#ffb627';c.lineWidth=3;rr(x,y,w,h,16);c.stroke();
+  const s=SP[t.id];const k=40/Math.max(s.w,s.h*1.4);drawPiece({s,w:s.w,h:s.h,sq:Math.sin(G.time*5)*0.05,blinkT:(G.time%3)},x+28,y+h-10,0,t.score-G.floor<=3?2:0,1,c,k);
+  c.textAlign='left';c.fillStyle='#8b7bd8';c.font='900 11px Nunito,sans-serif';fitText(T('lbNext'),x+54,y+18,w-60);
+  c.fillStyle='#3b2a4a';c.font='900 14px Nunito,sans-serif';fitText(t.self?T(t.self):T(t.name),x+54,y+35,w-60);
+  c.fillStyle='#ff5ca0';c.font='900 15px Nunito,sans-serif';c.fillText(t.score,x+54,y+52)}
+ if(passFx&&passFx.t<1.2){const k=passFx.t/1.2;const s=SP[passFx.id];c.globalAlpha=1-k;const sc=(52/Math.max(s.w,s.h*1.4))*(1+k*1.5);
+  drawPiece({s,w:s.w,h:s.h,sq:0,blinkT:9},x+28-k*CW*0.3,y+h+20+k*CH*0.25,k*3,3,1,c,sc);c.globalAlpha=1}}
+function drawGoalCard(){const c=ctx,L=G.lvl;if(!L)return;const w=Math.min(150,CW*0.34),h=G.lvl.drops?66:54,x=CW-w-10,y=10;
+ c.fillStyle='#ffffffe6';rr(x,y,w,h,16);c.fill();c.strokeStyle='#3fbf88';c.lineWidth=3;rr(x,y,w,h,16);c.stroke();
+ c.textAlign='left';c.fillStyle='#8b7bd8';c.font='900 11px Nunito,sans-serif';fitText('🏁 '+T('goalShort')+' · '+T('lvN',{n:G.lvIdx+1}),x+12,y+17,w-20);
+ c.fillStyle='#3b2a4a';c.font='900 16px Nunito,sans-serif';c.fillText(Math.min(G.floor,L.n)+' / '+L.n,x+12,y+35);
+ c.fillStyle='#e5dcef';rr(x+12,y+41,w-24,7,4);c.fill();c.fillStyle='#3fbf88';rr(x+12,y+41,Math.max(7,(w-24)*Math.min(1,G.floor/L.n)),7,4);c.fill();
+ if(L.drops){const n=dropsLeft();c.fillStyle=n<=5?'#ff3b6b':'#8a5a00';c.font='900 12px Nunito,sans-serif';fitText('🧸 '+T('left',{n:Math.max(0,n)}),x+12,y+61,w-20)}}
+function drawGoalLine(){const c=ctx,L=G.lvl;if(!L||G.floor>=L.n)return;const y=wy(heightOfFloor(L.n));if(y<-20||y>CH)return;
+ c.setLineDash([12*S,8*S]);c.strokeStyle='#3fbf88';c.lineWidth=4*S;c.beginPath();c.moveTo(0,y);c.lineTo(CW,y);c.stroke();c.setLineDash([]);
+ c.font=`900 ${16*S}px Nunito,sans-serif`;c.textAlign='left';c.lineWidth=5;c.strokeStyle='#fff';c.strokeText('🏁 '+L.n,wx(8),y-7*S);c.fillStyle='#2a8a60';c.fillText('🏁 '+L.n,wx(8),y-7*S)}
+function fitText(str,x,y,maxW){const c=ctx;let t=str;while(c.measureText(t).width>maxW&&t.length>2)t=t.slice(0,-1);if(t!==str)t=t.slice(0,-1)+'…';c.fillText(t,x,y)}
+/* ---- tutorial (first run only) ---- */
+const inTut=()=>!tutDone&&(G.state==='play'||G.state==='pick'||G.state==='end');
+let tipT=0,tipKey='';
+function showTip(key,dur,up){const el=$('tip');if(tipKey!==key){el.hidden=false;el.textContent=T(key);el.className=up?'up':'';el.style.top=up?'44%':'30%';
+  el.style.animation='none';void el.offsetWidth;el.style.animation='';tipKey=key}tipT=dur||0}
+function hideTip(){$('tip').hidden=true;tipKey='';tipT=0}
+function tutOnce(key,dur,up){if(!inTut()||tutSeen[key])return;tutSeen[key]=1;showTip(key,dur,up)}
+function tutTick(dt){
+ if(!inTut()||G.state!=='play'){if(tipKey&&(G.state!=='play'||tutDone))hideTip();return}
+ if(tipT>0){tipT-=dt;if(tipT<=0)hideTip();return}
+ if(G.floor===0&&G.hook.piece)showTip('tut1');
+ else if(G.floor>0&&G.floor<6&&!tutSeen.tut3&&G.hook.piece)showTip('tut2');
+ else if(tipKey==='tut1'||tipKey==='tut2')hideTip();
+}
+function predictLand(){const p=G.hook.piece;if(!p)return null;const h=hookPos();const dy=pivotY()-ROPE-p.h-topY();const t=Math.sqrt(Math.max(0,2*dy/2600));
+ const px=h.x+h.vx*0.35*t;const tx=topLocalX()+swayAt(topY());let dx=px-tx;if(lv('mag'))dx*=1-0.2*lv('mag');
+ const pw=7*(1+0.3*lv('wide'))*(p.s.trait==='fluffy'?1.6:1);return{px,ok:Math.abs(dx)<=pw}}
+function hud(){
+ const c=ctx;c.save();c.translate(0,HUDY);if(G.state==='play'||G.state==='pick'||G.state==='win')G.mode==='level'?drawGoalCard():drawNextCard();c.textAlign='center';c.textAlign='center';
+ c.font=`900 ${64*Math.min(S,1.2)}px Nunito,sans-serif`;c.lineWidth=8;c.strokeStyle='#fff';c.strokeText(G.floor,CW/2,64*Math.min(S,1.2)+14);c.fillStyle='#ff5ca0';c.fillText(G.floor,CW/2,64*Math.min(S,1.2)+14);
+ // hearts
+ const hs=Math.max(18,22*Math.min(S,1.1));for(let i=0;i<Math.max(3,G.hearts);i++){heart(CW/2-(Math.max(3,G.hearts)-1)*hs*0.6+i*hs*1.2,64*Math.min(S,1.2)+40,hs*0.45,i<G.hearts)}
+ // coins
+ c.font=`900 ${18}px Nunito,sans-serif`;c.textAlign='left';coinIcon(70,28,9);c.fillStyle='#3b2a4a';c.fillText(G.coinsRun,84,34);
+ // wobble meter
+ const mw=Math.min(180,CW*0.4),mx=CW/2-mw/2,my=64*Math.min(S,1.2)+62;const v=Math.min(1,G.sway/120);
+ c.fillStyle='#ffffffaa';rr(mx,my,mw,10,5);c.fill();c.fillStyle=v>0.66?'#ff3b6b':v>0.4?'#ffb627':'#6fd3b5';rr(mx,my,Math.max(10,mw*v),10,5);c.fill();
+ // wind
+ if(G.wind){const d=Math.sign(G.wind);c.fillStyle='#ffffffdd';c.font=`900 15px Nunito,sans-serif`;c.textAlign='center';c.fillText((d<0?'⟵ ':'')+T('wind')+(d>0?' ⟶':''),CW/2,my+30)}
+ // zone banner
+ if(G.zoneShow){const z=G.zoneShow;const a=Math.min(1,z.t,(2.2-z.t)*3);c.globalAlpha=a;c.font=`900 ${34*Math.min(S,1.2)}px Nunito,sans-serif`;c.textAlign='center';c.lineWidth=8;c.strokeStyle='#fff';const txt=['🌳','🏙️','☁️','🌇','🌌'][z.z]+' '+T('z'+z.z);c.strokeText(txt,CW/2,CH*0.36);c.fillStyle='#8b7bd8';c.fillText(txt,CW/2,CH*0.36);c.globalAlpha=1}
+ if(G.sway>80&&G.state==='play'){c.font=`900 ${26*Math.min(S,1.2)}px Nunito,sans-serif`;c.textAlign='center';c.globalAlpha=0.6+0.4*Math.sin(G.time*14);c.lineWidth=7;c.strokeStyle='#fff';c.strokeText(T('wobbly'),CW/2,my+58);c.fillStyle='#ff3b6b';c.fillText(T('wobbly'),CW/2,my+58);c.globalAlpha=1}
+;c.restore()}
+function rr(x,y,w,h,r){const c=ctx;c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
+function heart(x,y,r,full){const c=ctx;c.save();c.translate(x,y);c.beginPath();c.moveTo(0,r*0.9);c.bezierCurveTo(-r*1.6,-r*0.2,-r*0.8,-r*1.4,0,-r*0.5);c.bezierCurveTo(r*0.8,-r*1.4,r*1.6,-r*0.2,0,r*0.9);c.fillStyle=full?'#ff5c8a':'#ffffff88';c.fill();c.lineWidth=2;c.strokeStyle='#fff';c.stroke();c.restore()}
+function coinIcon(x,y,r){const c=ctx;const g=c.createRadialGradient(x-r*0.3,y-r*0.3,r*0.1,x,y,r);g.addColorStop(0,'#fff6b0');g.addColorStop(0.6,'#ffc83d');g.addColorStop(1,'#d99000');c.fillStyle=g;c.beginPath();c.arc(x,y,r,0,7);c.fill()}
+function cloud(x,y,s,a){const c=ctx;c.globalAlpha=a;c.fillStyle='#fff';c.beginPath();c.arc(x,y,28*s,0,7);c.arc(x+30*s,y-12*s,34*s,0,7);c.arc(x+64*s,y,26*s,0,7);c.rect(x,y,64*s,26*s);c.fill();c.globalAlpha=1}
+function bush(x,y,s){const c=ctx;c.fillStyle='#6cbf52';c.beginPath();c.arc(x,y,18*s,Math.PI,0);c.arc(x+22*s,y-6*s,20*s,Math.PI,0);c.arc(x+44*s,y,16*s,Math.PI,0);c.fill()}
+const SKINS={pink:['#ff9cc0','#ffc2d7','#e46e98','#fff'],garden:['#8fd36f','#c9f0a8','#4f9a3f','#ffe066'],cake:['#fff7ee','#ffffff','#e2c4a8','#ff5c6c'],moon:['#ffe27a','#fff3b8','#d9a92e','#fff'],
+ melon:['#ff6b7a','#ff9aa5','#3f9a4a','#2b2b2b'],cookie:['#d9a066','#ebc38d','#a8703a','#6b3e1e'],cloud2:['#ffffff','#f3f7ff','#b9c8e6','#8fb8ff'],rainbow:['#ff9cc6','#ffffff66','#c48bff','#fff']};
+function paintBase(c,x,y,w,h,s,id){const k=SKINS[id]||SKINS.pink;let f=k[0];
+ if(id==='rainbow'){f=c.createLinearGradient(x,0,x+w,0);RAINBOW.forEach((q,i)=>f.addColorStop(i/5,q))}
+ c.fillStyle=f;rrc(c,x,y,w,h,14*s);c.fill();c.fillStyle=k[1];rrc(c,x+6*s,y+5*s,w-12*s,h*0.45,10*s);c.fill();
+ c.strokeStyle=k[2];c.lineWidth=(id==='melon'?6:3)*s;rrc(c,x,y,w,h,14*s);c.stroke();
+ c.fillStyle=k[3];for(let i=1;i<6;i++){const cx=x+w*i/6,cy=y+h*0.62;
+  if(id==='moon')star4(c,cx,cy,5*s);
+  else if(id==='garden'){c.beginPath();for(let j=0;j<5;j++){const a=j*1.2566;c.moveTo(cx,cy);c.arc(cx+Math.cos(a)*3*s,cy+Math.sin(a)*3*s,2.4*s,0,7)}c.fill();c.fillStyle='#ff9cc0';c.beginPath();c.arc(cx,cy,1.8*s,0,7);c.fill();c.fillStyle=k[3]}
+  else if(id==='melon'){c.beginPath();c.ellipse(cx,cy-(i%2)*4*s,1.8*s,3*s,0.3,0,7);c.fill()}
+  else if(id==='cookie'){c.beginPath();c.arc(cx+((i*7)%5-2)*2*s,cy-((i*3)%3)*4*s,3.2*s,0,7);c.fill()}
+  else if(id==='cloud2'){c.beginPath();c.ellipse(cx,cy,2.2*s,3.2*s,0,0,7);c.fill()}
+  else{c.beginPath();c.arc(cx,cy,(id==='cake'?4:2.6)*s,0,7);c.fill()}}}
+function drawBase(){paintBase(ctx,wx(240-BASE.w/2),wy(BASE.h),BASE.w*S,BASE.h*S,S,skin)}
+
+/* ---- the squishy ---- */
+function shade(hex,k){const p=parseInt(hex.slice(1),16);let r=p>>16,g=(p>>8)&255,b=p&255;if(k<0){r*=1+k;g*=1+k;b*=1+k}else{r+=(255-r)*k;g+=(255-g)*k;b+=(255-b)*k}return`rgb(${r|0},${g|0},${b|0})`}
+function drawPiece(p,x,y,rot,mood,scale,cx,ps){ // x center, y bottom (world). mood: 0 calm 1 happy 2 worried 3 dizzy
+ const c=cx||ctx;const s=p.s;const sc=ps||S;
+ const sq=Math.max(-0.35,Math.min(0.3,p.sq||0));
+ const w=p.w*sc*(1-sq*0.8)*scale,h=p.h*sc*(1+sq)*scale;
+ const X=cx?x:wx(x),Y=cx?y:wy(y);
+ c.save();c.translate(X,Y);c.rotate(rot||0);
+ // shadow
+ c.fillStyle='#0000001a';c.beginPath();c.ellipse(0,0,w*0.46,h*0.07,0,0,7);c.fill();
+ const col=s.col,dk=shade(col,-0.25);
+ c.lineWidth=3*sc;c.strokeStyle=dk;
+ if(s.jelly)c.globalAlpha=0.88;
+ // ears behind
+ earsBack(c,s,w,h,sc,col,dk);
+ // body
+ bodyPath(c,s,w,h,sc);
+ const g=c.createLinearGradient(0,-h,0,0);g.addColorStop(0,shade(col,0.25));g.addColorStop(1,col);c.fillStyle=g;c.fill();
+ if(s.shape==='cloud'){c.strokeStyle='#d6dcf0'}c.stroke();
+ if(s.shape==='cup'){c.globalAlpha=0.9}
+ if(p.shiny){const t=(G.time||performance.now()/1000);const rg=c.createLinearGradient(-w/2,-h,w/2,0);['#ff6b9d','#ffc83d','#6fd3b5','#7fb6ff','#c48bff'].forEach((k,i)=>rg.addColorStop(((i/4)+t*0.3)%1,k));c.lineWidth=5*sc;c.strokeStyle=rg;bodyPath(c,s,w,h,sc);c.stroke();c.lineWidth=3*sc;c.strokeStyle=dk}
+ c.globalAlpha=1;
+ // belly / details
+ if(s.belly){c.fillStyle=s.belly;c.beginPath();c.ellipse(0,-h*0.3,w*0.28,h*0.24,0,0,7);c.fill()}
+ if(s.shape==='dump'){c.strokeStyle=shade(col,-0.18);c.lineWidth=2.4*sc;for(let i=-2;i<=2;i++){c.beginPath();c.moveTo(i*w*0.1,-h*0.97);c.quadraticCurveTo(i*w*0.13,-h*0.8,i*w*0.12,-h*0.72);c.stroke()}}
+ if(s.shape==='cro'){c.strokeStyle=shade(col,-0.3);c.lineWidth=2.6*sc;for(let i=-2;i<=2;i++){c.beginPath();c.moveTo(i*w*0.16-6*sc,-h*0.95+Math.abs(i)*h*0.12);c.quadraticCurveTo(i*w*0.16+4*sc,-h*0.5,i*w*0.16-4*sc,-h*0.08);c.stroke()}}
+ if(s.shape==='bun'){c.strokeStyle=shade(col,-0.15);c.lineWidth=2.4*sc;c.beginPath();c.arc(0,-h*0.88,w*0.08,0,Math.PI*1.6);c.stroke()}
+ if(s.shape==='toast'){c.fillStyle='#fff3d6';c.beginPath();c.ellipse(0,-h*0.42,w*0.36,h*0.34,0,0,7);c.fill()}
+ details(c,s,w,h,sc,col,dk);
+ if(s.shine){c.fillStyle='#ffffffaa';c.beginPath();c.ellipse(-w*0.24,-h*0.75,w*0.08,h*0.12,-0.5,0,7);c.fill();const t=(G.time*2)%3;if(t<1){c.globalAlpha=1-t;c.fillStyle='#fff';star4(c,w*0.3,-h*0.85,7*sc*(1+t));c.globalAlpha=1}}
+ if(s.stars){c.fillStyle='#fff';for(const [a,b] of [[-0.3,-0.7],[0.28,-0.5],[0.05,-0.85],[-0.15,-0.25]]){star4(c,w*a,h*b,3.2*sc)}}
+ if(s.jelly){c.fillStyle='#ffffff99';c.beginPath();c.ellipse(-w*0.22,-h*0.72,w*0.1,h*0.1,0,0,7);c.fill()}
+ earsFront(c,s,w,h,sc,col,dk);
+ face(c,s,w,h,sc,mood,p.blinkT<0.12);
+ if(p.shiny){const t=(G.time||performance.now()/1000);c.fillStyle='#fff';for(let i=0;i<3;i++){const a=t*1.5+i*2.1;const k=(Math.sin(t*3+i*2)+1)/2;c.globalAlpha=0.4+0.6*k;star4(c,Math.cos(a)*w*0.55,-h*0.5+Math.sin(a)*h*0.6,(3+4*k)*sc)}c.globalAlpha=1}
+ c.restore();
+}
+function bodyPath(c,s,w,h,sc){
+ c.beginPath();
+ const sh=s.shape;
+ if(sh==='dump'){c.moveTo(-w/2,-h*0.05);c.quadraticCurveTo(-w/2,-h,0,-h);c.quadraticCurveTo(w/2,-h,w/2,-h*0.05);c.quadraticCurveTo(0,h*0.05,-w/2,-h*0.05)}
+ else if(sh==='cro'){c.moveTo(-w/2,-h*0.15);c.quadraticCurveTo(-w*0.45,-h*1.05,0,-h);c.quadraticCurveTo(w*0.45,-h*1.05,w/2,-h*0.15);c.quadraticCurveTo(0,h*0.08,-w/2,-h*0.15)}
+ else if(sh==='toast'){const r=w*0.22;c.moveTo(-w/2+4*sc,0);c.lineTo(-w/2+4*sc,-h*0.62);c.arc(-w/2+r,-h*0.62,r,Math.PI,Math.PI*1.5);c.quadraticCurveTo(0,-h*1.12,w/2-r,-h*0.62-r);c.arc(w/2-r,-h*0.62,r,Math.PI*1.5,0);c.lineTo(w/2-4*sc,0);c.closePath()}
+ else if(sh==='tri'){c.moveTo(-w*0.36,0);c.lineTo(w*0.36,0);c.quadraticCurveTo(w*0.52,0,w*0.42,-h*0.2);c.lineTo(w*0.1,-h*0.92);c.quadraticCurveTo(0,-h*1.04,-w*0.1,-h*0.92);c.lineTo(-w*0.42,-h*0.2);c.quadraticCurveTo(-w*0.52,0,-w*0.36,0);c.closePath()}
+ else if(sh==='cup'){c.moveTo(-w*0.46,-h*0.86);c.lineTo(w*0.46,-h*0.86);c.lineTo(w*0.36,-h*0.04);c.quadraticCurveTo(w*0.35,0,w*0.3,0);c.lineTo(-w*0.3,0);c.quadraticCurveTo(-w*0.35,0,-w*0.36,-h*0.04);c.closePath()}
+ else if(sh==='pud'){c.moveTo(-w*0.34,-h*0.9);c.quadraticCurveTo(0,-h*1.02,w*0.34,-h*0.9);c.lineTo(w*0.48,-h*0.06);c.quadraticCurveTo(w*0.48,0,w*0.42,0);c.lineTo(-w*0.42,0);c.quadraticCurveTo(-w*0.48,0,-w*0.48,-h*0.06);c.closePath()}
+ else if(sh==='berry'){c.moveTo(0,0);c.bezierCurveTo(-w*0.62,-h*0.08,-w*0.6,-h*0.98,0,-h*0.92);c.bezierCurveTo(w*0.6,-h*0.98,w*0.62,-h*0.08,0,0);c.closePath()}
+ else if(sh==='ghost'){c.moveTo(-w/2,-h*0.08);c.lineTo(-w/2,-h*0.55);c.quadraticCurveTo(-w/2,-h,0,-h);c.quadraticCurveTo(w/2,-h,w/2,-h*0.55);c.lineTo(w/2,-h*0.08);for(let i=0;i<4;i++){const x0=w/2-i*w/4;c.quadraticCurveTo(x0-w/8,i%2?-h*0.2:h*0.06,x0-w/4,-h*0.08)}c.closePath()}
+ else if(sh==='cloud'){c.moveTo(-w*0.46,-h*0.02);c.quadraticCurveTo(-w*0.64,-h*0.5,-w*0.3,-h*0.62);c.quadraticCurveTo(-w*0.24,-h*1.06,0,-h*0.96);c.quadraticCurveTo(w*0.3,-h*1.1,w*0.32,-h*0.6);c.quadraticCurveTo(w*0.64,-h*0.5,w*0.46,-h*0.02);c.quadraticCurveTo(0,h*0.05,-w*0.46,-h*0.02);c.closePath()}
+ else if(sh==='mush'){c.moveTo(-w/2,-h*0.48);c.quadraticCurveTo(-w*0.52,-h*1.02,0,-h);c.quadraticCurveTo(w*0.52,-h*1.02,w/2,-h*0.48);c.quadraticCurveTo(0,-h*0.38,-w/2,-h*0.48);c.closePath()}
+ else {const r=Math.min(h*0.48,w*0.45);c.moveTo(-w/2+r,-h);c.arcTo(w/2,-h,w/2,0,r);c.arcTo(w/2,0,-w/2,0,r*0.55);c.arcTo(-w/2,0,-w/2,-h,r*0.55);c.arcTo(-w/2,-h,w/2,-h,r);c.closePath()}
+}
+const RAINBOW=['#ff6b9d','#ffb347','#ffe066','#7ee08a','#7fb6ff','#c48bff'];
+function details(c,s,w,h,sc,col,dk){
+ if(s.shape==='tri'){c.fillStyle='#2f4a3a';c.beginPath();c.moveTo(-w*0.2,0);c.lineTo(w*0.2,0);c.lineTo(w*0.2,-h*0.32);c.lineTo(-w*0.2,-h*0.32);c.closePath();c.fill()}
+ if(s.shape==='cup'){c.fillStyle='#4a2f2a';for(let i=0;i<7;i++){c.beginPath();c.arc(-w*0.24+i*w*0.08,-h*0.1-(i%2)*h*0.08,4.2*sc,0,7);c.fill()}
+  c.fillStyle='#ffffffcc';c.beginPath();c.ellipse(0,-h*0.86,w*0.46,h*0.06,0,0,7);c.fill();c.strokeStyle=dk;c.lineWidth=2*sc;c.stroke()}
+ if(s.shape==='pud'){c.fillStyle='#9a5a22';c.beginPath();c.moveTo(-w*0.34,-h*0.9);c.quadraticCurveTo(0,-h*1.02,w*0.34,-h*0.9);c.lineTo(w*0.37,-h*0.72);c.quadraticCurveTo(w*0.2,-h*0.62,w*0.1,-h*0.74);c.quadraticCurveTo(-w*0.05,-h*0.6,-w*0.18,-h*0.74);c.quadraticCurveTo(-w*0.3,-h*0.64,-w*0.37,-h*0.72);c.closePath();c.fill();
+  c.fillStyle='#ff4d5e';c.beginPath();c.arc(0,-h*1.02,w*0.08,0,7);c.fill();c.strokeStyle='#4f8a3a';c.lineWidth=2*sc;c.beginPath();c.moveTo(0,-h*1.08);c.quadraticCurveTo(w*0.04,-h*1.2,w*0.1,-h*1.22);c.stroke()}
+ if(s.shape==='berry'){c.fillStyle='#ffe28a';for(const [a,b] of [[-0.25,-0.35],[0.22,-0.32],[-0.32,-0.65],[0.3,-0.62],[0,-0.2],[-0.12,-0.82],[0.14,-0.84]]){c.beginPath();c.ellipse(w*a,h*b,2.2*sc,3.2*sc,0,0,7);c.fill()}}
+ if(s.shape==='mush'){c.fillStyle='#fff';for(const [a,b,r] of [[-0.25,-0.78,0.08],[0.18,-0.86,0.07],[0.33,-0.62,0.05],[-0.05,-0.62,0.05]]){c.beginPath();c.arc(w*a,h*b,w*r,0,7);c.fill()}}
+ if(s.frost){const fr=s.frost;let fg;if(fr==='rainbow'){fg=c.createLinearGradient(-w/2,0,w/2,0);RAINBOW.forEach((k,i)=>fg.addColorStop(i/5,k))}else fg=fr;
+  c.fillStyle=fg;c.beginPath();const r=Math.min(h*0.48,w*0.45);c.moveTo(-w/2,-h*0.55);c.arcTo(-w/2,-h,0,-h,r);c.arcTo(w/2,-h,w/2,-h*0.55,r);c.lineTo(w/2,-h*0.55);
+  for(let i=0;i<6;i++){const x=w/2-i*w/6;c.quadraticCurveTo(x-w/12,i%2?-h*0.3:-h*0.5,x-w/6,-h*0.52)}c.closePath();c.fill();
+  const sp=['#fff','#7fd8ff','#ffe066','#6fd3b5'];for(let i=0;i<9;i++){c.fillStyle=sp[i%4];c.save();c.translate(-w*0.36+i*w*0.09,-h*(0.72+((i*37)%5)*0.03));c.rotate(i*1.3);c.fillRect(-4*sc,-1.2*sc,8*sc,2.4*sc);c.restore()}}
+ if(s.topper){c.fillStyle='#ff9466';c.beginPath();const r=Math.min(h*0.48,w*0.45);c.moveTo(-w/2,-h*0.62);c.arcTo(-w/2,-h*1.02,0,-h*1.02,r*0.8);c.arcTo(w/2,-h*1.02,w/2,-h*0.62,r*0.8);c.lineTo(w/2,-h*0.62);c.quadraticCurveTo(0,-h*0.5,-w/2,-h*0.62);c.closePath();c.fill();
+  c.strokeStyle='#ffd8c4';c.lineWidth=3*sc;for(let i=-2;i<=2;i++){c.beginPath();c.moveTo(i*w*0.15-6*sc,-h*0.98);c.lineTo(i*w*0.15+6*sc,-h*0.62);c.stroke()}}
+ if(s.mask){c.fillStyle='#fff6ee';for(const d of [-1,1]){c.beginPath();c.ellipse(d*w*0.17,-h*0.72,w*0.08,h*0.06,0,0,7);c.fill();c.beginPath();c.ellipse(d*w*0.2,-h*0.42,w*0.1,h*0.1,0,0,7);c.fill()}}
+ if(s.patch){c.fillStyle='#6e5a48';for(const d of [-1,1]){c.beginPath();c.ellipse(d*w*0.17,-h*0.53,w*0.09,h*0.14,d*0.5,0,7);c.fill()}}
+}
+function star4(c,x,y,r){c.beginPath();c.moveTo(x,y-r);c.quadraticCurveTo(x,y,x+r,y);c.quadraticCurveTo(x,y,x,y+r);c.quadraticCurveTo(x,y,x-r,y);c.quadraticCurveTo(x,y,x,y-r);c.fill()}
+function earsBack(c,s,w,h,sc,col,dk){
+ c.fillStyle=col;c.strokeStyle=dk;c.lineWidth=3*sc;
+ if(s.ears==='nub'||s.ears==='bear'){const r=s.ears==='bear'?w*0.12:w*0.07;for(const d of [-1,1]){c.beginPath();c.arc(d*w*0.28,-h*0.95,r,0,7);c.fill();c.stroke()}}
+ if(s.ears==='cat'){for(const d of [-1,1]){c.beginPath();c.moveTo(d*w*0.38,-h*0.75);c.lineTo(d*w*0.3,-h*1.22);c.lineTo(d*w*0.1,-h*0.93);c.closePath();c.fill();c.stroke()}}
+ if(s.ears==='frog'){for(const d of [-1,1]){c.beginPath();c.arc(d*w*0.22,-h*0.95,w*0.13,0,7);c.fill();c.stroke()}}
+ if(s.ears==='horns'){c.fillStyle='#fff4d8';c.strokeStyle='#c9b48a';for(const d of [-1,1]){c.beginPath();c.moveTo(d*w*0.3,-h*0.85);c.quadraticCurveTo(d*w*0.62,-h*0.95,d*w*0.55,-h*1.25);c.quadraticCurveTo(d*w*0.48,-h*1.02,d*w*0.24,-h*0.98);c.closePath();c.fill();c.stroke()}}
+ if(s.ears==='fin'){c.beginPath();c.moveTo(-w*0.12,-h*0.92);c.quadraticCurveTo(w*0.02,-h*1.45,w*0.16,-h*1.38);c.quadraticCurveTo(w*0.06,-h*1.15,w*0.14,-h*0.92);c.closePath();c.fill();c.stroke()}
+ if(s.ears==='spikes'){c.fillStyle=shade(col,-0.18);for(let i=-1;i<=1;i++){c.beginPath();c.moveTo(i*w*0.2-w*0.08,-h*0.94);c.lineTo(i*w*0.2,-h*1.18-(i?0:h*0.06));c.lineTo(i*w*0.2+w*0.08,-h*0.94);c.closePath();c.fill();c.stroke()}}
+ if(s.ears==='bunny'){for(const d of [-1,1]){c.beginPath();c.ellipse(d*w*0.2,-h*1.2,w*0.08,h*0.4,d*0.15,0,7);c.fill();c.stroke();c.fillStyle='#ffc4dc';c.beginPath();c.ellipse(d*w*0.2,-h*1.18,w*0.035,h*0.28,d*0.15,0,7);c.fill();c.fillStyle=col}}
+ if(s.ears==='uni'){const mc=['#ff9cc6','#c48bff','#7fd8ff','#ffe066'];c.lineCap='round';c.lineWidth=9*sc;mc.forEach((k,i)=>{c.strokeStyle=k;c.beginPath();c.moveTo(-w*0.36+i*w*0.08,-h*0.95);c.quadraticCurveTo(-w*0.5+i*w*0.06,-h*0.6,-w*0.52+i*w*0.04,-h*0.3);c.stroke()});
+  c.fillStyle='#ffd23f';c.strokeStyle='#d9a92e';c.lineWidth=2.5*sc;c.beginPath();c.moveTo(-w*0.07,-h*0.95);c.lineTo(w*0.02,-h*1.42);c.lineTo(w*0.09,-h*0.95);c.closePath();c.fill();c.stroke();c.fillStyle=col;c.strokeStyle=dk;c.lineWidth=3*sc}
+ if(s.ears==='dragon'){c.fillStyle='#b9a1ff';for(const d of [-1,1]){c.beginPath();c.moveTo(d*w*0.42,-h*0.55);c.quadraticCurveTo(d*w*0.75,-h*0.95,d*w*0.68,-h*0.35);c.quadraticCurveTo(d*w*0.6,-h*0.45,d*w*0.45,-h*0.3);c.closePath();c.fill();c.stroke()}
+  c.fillStyle='#fff4d8';for(const d of [-1,1]){c.beginPath();c.moveTo(d*w*0.2,-h*0.92);c.lineTo(d*w*0.26,-h*1.2);c.lineTo(d*w*0.32,-h*0.86);c.closePath();c.fill();c.stroke()}c.fillStyle=col}
+ if(s.ears==='bat'){for(const d of [-1,1]){c.beginPath();c.moveTo(d*w*0.42,-h*0.65);c.lineTo(d*w*0.82,-h*0.95);c.lineTo(d*w*0.72,-h*0.55);c.lineTo(d*w*0.8,-h*0.3);c.lineTo(d*w*0.45,-h*0.3);c.closePath();c.fill();c.stroke();c.beginPath();c.moveTo(d*w*0.32,-h*0.85);c.lineTo(d*w*0.3,-h*1.25);c.lineTo(d*w*0.12,-h*0.96);c.closePath();c.fill();c.stroke()}}
+ if(s.ears==='leaf'){c.fillStyle='#4fbf5e';c.strokeStyle='#2f8a3e';for(let i=-2;i<=2;i++){c.beginPath();c.ellipse(i*w*0.09,-h*0.92,w*0.09,h*0.08,i*0.5,0,7);c.fill();c.stroke()}c.fillStyle=col;c.strokeStyle=dk}
+ if(s.shape==='cup'){c.strokeStyle='#ff7aa8';c.lineWidth=7*sc;c.lineCap='round';c.beginPath();c.moveTo(w*0.08,-h*0.6);c.lineTo(w*0.22,-h*1.25);c.stroke();c.strokeStyle=dk;c.lineWidth=3*sc}
+ if(s.shape==='mush'){c.fillStyle='#fff3e0';c.strokeStyle='#d9c3a5';c.beginPath();c.moveTo(-w*0.24,-h*0.5);c.quadraticCurveTo(-w*0.28,0,-w*0.2,0);c.lineTo(w*0.2,0);c.quadraticCurveTo(w*0.28,0,w*0.24,-h*0.5);c.closePath();c.fill();c.stroke();c.fillStyle=col;c.strokeStyle=dk}
+ if(s.ears==='gills'){c.strokeStyle=s.id==='cosmo'?'#ff8ee0':'#ff6f9f';c.lineWidth=5*sc;c.lineCap='round';for(const d of [-1,1])for(let i=0;i<3;i++){const a=(-0.5+i*0.45);c.beginPath();c.moveTo(d*w*0.42,-h*0.62);c.lineTo(d*(w*0.42+Math.cos(a)*w*0.2),-h*0.62-Math.sin(a+0.6)*h*0.42);c.stroke()}}
+}
+function earsFront(c,s,w,h,sc,col,dk){
+ if(s.ears==='horns'){c.fillStyle=shade(col,-0.08);c.beginPath();for(let i=0;i<7;i++){const x=-w*0.3+i*w*0.1;c.moveTo(x-w*0.06,-h*0.96);c.quadraticCurveTo(x,-h*0.5,x+w*0.06,-h*0.96)}c.fill()}
+ if(s.ears==='nub'&&s.id!=='gcapy'){/*capy nose*/c.fillStyle=shade(col,-0.35);c.beginPath();c.ellipse(0,-h*0.36,w*0.08,h*0.05,0,0,7);c.fill()}
+}
+function face(c,s,w,h,sc,mood,blink){
+ const ey=s.ears==='frog'?-h*0.95:-h*(s.faceY||0.56),ex=s.ears==='frog'?w*0.22:w*(s.eyeX||0.17),er=Math.max(2.5,4.2*sc);
+ const eyeC=s.id==='peng'||s.id==='cosmo'||s.id==='jelly'||s.id==='bat'?'#1d1630':'#3b2a4a';
+ c.fillStyle=eyeC;c.strokeStyle=eyeC;c.lineWidth=2.6*sc;c.lineCap='round';
+ if(s.ears==='frog'){c.fillStyle='#fff';for(const d of [-1,1]){c.beginPath();c.arc(d*ex,ey,er*1.9,0,7);c.fill()}c.fillStyle=eyeC}
+ if(mood===1||blink&&mood!==3){for(const d of [-1,1]){c.beginPath();c.arc(d*ex,ey+(mood===1?er*0.6:0),er,Math.PI*1.1,Math.PI*1.9);c.stroke()}}
+ else if(mood===2){for(const d of [-1,1]){c.beginPath();c.moveTo(d*ex-er,ey-er);c.lineTo(d*ex+er*0.6*d,ey);c.lineTo(d*ex-er,ey+er);c.stroke()}
+  c.fillStyle='#7fd8ff';c.beginPath();c.ellipse(w*0.36,-h*0.78,3*sc,5*sc,0.3,0,7);c.fill()}
+ else if(mood===3){for(const d of [-1,1]){c.beginPath();c.moveTo(d*ex-er,ey-er);c.lineTo(d*ex+er,ey+er);c.moveTo(d*ex+er,ey-er);c.lineTo(d*ex-er,ey+er);c.stroke()}}
+ else{for(const d of [-1,1]){c.beginPath();c.arc(d*ex,ey,er,0,7);c.fill();c.fillStyle='#fff';c.beginPath();c.arc(d*ex+er*0.35,ey-er*0.35,er*0.38,0,7);c.fill();c.fillStyle=eyeC}}
+ // blush
+ c.fillStyle='#ff7aa866';for(const d of [-1,1]){c.beginPath();c.ellipse(d*w*0.27,ey+h*0.15,w*0.07,h*0.06,0,0,7);c.fill()}
+ // mouth
+ c.strokeStyle=eyeC;c.lineWidth=2.2*sc;const my=ey+h*0.16;
+ if(s.beak){c.fillStyle='#ffb627';c.beginPath();c.moveTo(-6*sc,my-3*sc);c.lineTo(6*sc,my-3*sc);c.lineTo(0,my+5*sc);c.fill();return}
+ c.beginPath();
+ if(mood===2||mood===3){c.ellipse(0,my+2*sc,4*sc,mood===3?5*sc:3*sc,0,0,7);c.stroke()}
+ else{c.arc(-4*sc,my,4*sc,0.1,Math.PI-0.1);c.moveTo(8*sc,my);c.arc(4*sc,my,4*sc,0.1,Math.PI-0.1);c.stroke()}
+}
+
+/* ================= UI ================= */
+const LAYERS=['title','pick','over','boxL','collL','dailyL','missL','revL','lbL','startL','lvEnd','mapL','shopL'];
+function showLayer(id){LAYERS.forEach(l=>$(l).hidden=l!==id);$('lang').hidden=id!=='title';updSkills()}
+function applyText(){if($('tRank'))$('tRank').textContent=rankText();document.querySelectorAll('[data-t]').forEach(e=>e.textContent=T(e.dataset.t));document.title=T('name');document.documentElement.lang=LANG==='zh'?'zh-CN':LANG;$('lang').value=LANG;$('tCoins').textContent=coins;$('tBest').textContent=best;updBoxBtn();updSkills()}
+function freeReady(){return tokens>0||Date.now()>=freeAt}
+function updBoxBtn(){const b=$('oBox');b.textContent=freeReady()?'🎁 '+T('freeBox'):T('boxCost',{c:BOX_COST});$('tCoins').textContent=coins;$('dBox').hidden=!freeReady();
+ const cl=curLevel();$('bPlayLv').textContent=LP[cl]?T('allClear'):T('lvN',{n:cl+1});
+ const e=$('bEndless');e.innerHTML=endlessOpen()?'🏆 '+T('endless'):'🔒 '+T('endless')+'<small>'+T('endlessLock')+'</small>';e.disabled=!endlessOpen();
+ $('tRank').hidden=!endlessOpen();
+ $('dDaily').hidden=!dailyReady();$('dMiss').hidden=!missReady()}
+function updSkills(){const on=G.state==='play'||G.state==='pick';$('pauseB').hidden=!(G.state==='play'&&!userPaused);
+ const w=$('skWave'),b=$('skBlink');w.hidden=!(on&&G.waves>0);b.hidden=!(on&&(G.blinks>0||G.blinkArm));
+ w.innerHTML=`💥 ${T('wave')} <span class="n">${G.waves}</span><small>S</small>`;b.innerHTML=`✨ ${T('blink')} <span class="n">${G.blinks}</span><small>D</small>`;b.style.outline=G.blinkArm?'4px solid #8b7bd8':''}
+const ls=$('lang');LANGS.forEach(([k,n])=>{const o=document.createElement('option');o.value=k;o.textContent=n;ls.appendChild(o)});ls.value=LANG;
+ls.onchange=()=>{LANG=ls.value;store.set('lang',LANG);applyText()};
+$('mute').onclick=e=>{e.stopPropagation();muted=!muted;store.set('mute',muted);$('mute').textContent=muted?'🔇':'🔊'};$('mute').textContent=muted?'🔇':'🔊';
+$('bPlay').onclick=()=>{const cl=curLevel();if(LP[cl])openMap();else openStart('level',cl)};
+$('bMap').onclick=()=>openMap();$('bEndless').onclick=()=>{if(endlessOpen())openStart('endless')};$('bStore').onclick=()=>openShop('title');
+$('oHome').onclick=goTitle;
+$('bColl').onclick=()=>openColl('title');$('oColl').onclick=()=>openColl('over');
+$('bShop').onclick=()=>openBox('title');$('oBox').onclick=()=>{$('oBox').classList.remove('pulse');openBox('over')};
+$('skWave').onclick=e=>{e.stopPropagation();useWave()};$('skBlink').onclick=e=>{e.stopPropagation();useBlink()};
+function goTitle(){gp(false);BASE.w=200;G.mode='endless';G.lvl=null;G.wind=0;G.state='title';G.tower=[];G.lost=[];G.falling=null;G.topple=null;G.cam=0;showLayer('title');applyText()}
+
+cv.addEventListener('pointerdown',e=>{if(G.state==='play'){drop()}});
+function pauseGame(){if(G.state!=='play'||userPaused||adActive)return;userPaused=true;gp(false);try{AC&&AC.suspend()}catch(e){}$('pauseL').hidden=false;updSkills()}
+function resumeGame(){if(!userPaused||adActive)return;$('pauseL').hidden=true;adBreak(()=>{userPaused=false;last=performance.now();if(!adMute)try{AC&&AC.resume()}catch(e){}if(G.state==='play')gp(true);updSkills()})}
+$('pauseB').onclick=e=>{e.stopPropagation();pauseGame()};$('pzGo').onclick=resumeGame;
+$('pzHome').onclick=()=>{if(adActive)return;userPaused=false;$('pauseL').hidden=true;goTitle()};
+addEventListener('keydown',e=>{
+ const k=e.code;
+ if(adActive){if(k==='Space'||k.startsWith('Arrow'))e.preventDefault();return}
+ if(userPaused){if(k==='Escape'||k==='KeyP'||k==='Space'||k==='Enter'){e.preventDefault();resumeGame()}return}
+ if(G.state==='play'&&(k==='Escape'||k==='KeyP')){e.preventDefault();pauseGame();return}
+ if(G.state==='play'){if(k==='Space'||k==='Enter'||k==='ArrowDown'){e.preventDefault();drop()}if(k==='KeyS')useWave();if(k==='KeyD')useBlink()}
+ else if(G.state==='pick'){if(k==='Digit1'||k==='Numpad1')choose(0);if(k==='Digit2'||k==='Numpad2')choose(1);if(k==='Digit3'||k==='Numpad3')choose(2)}
+ else if((k==='Space'||k==='Enter')&&!$('title').hidden){e.preventDefault();$('bPlay').click()}
+ else if((k==='Space'||k==='Enter')&&!$('startL').hidden){e.preventDefault();goStart()}
+ else if((k==='Space'||k==='Enter')&&!$('lvEnd').hidden){e.preventDefault();$('leNext').click()}
+ else if((k==='Space'||k==='Enter')&&!$('over').hidden){e.preventDefault();$('oAgain').click()}
+ if(k==='KeyM')$('mute').click();
+});
+
+/* collection */
+function thumb(id,size,locked,shiny){const cvs=document.createElement('canvas');cvs.width=size*2;cvs.height=size*2;const c=cvs.getContext('2d');const s=SP[id];const p={s,w:s.w,h:s.h,sq:0,blinkT:9,shiny:!!shiny&&!locked};
+ const ext=['bunny','uni','fin','dragon','bat'].includes(s.ears)?1.7:1.3;const k=size*2/Math.max(s.w*(s.ears==='bat'||s.ears==='dragon'?1.5:1),s.h*ext)*0.8;drawPiece(p,size,size*2*0.86,0,locked?0:1,1,c,k);return cvs}
+let collFrom='title',collSer='pals';
+function serDone(id){return SPECIES.filter(x=>x.ser===id).every(x=>owned.includes(x.id))}
+function openColl(from){if(from)collFrom=from;
+ const tabs=$('collTabs');tabs.innerHTML='';SERIES.forEach(x=>{const b=document.createElement('button');const n=SPECIES.filter(y=>y.ser===x.id);const got=n.filter(y=>owned.includes(y.id)).length;
+  b.className='tab'+(x.id===collSer?' on':'');b.textContent=`${T('ser_'+x.id)} ${got}/${n.length}`;b.onclick=()=>{collSer=x.id;openColl()};tabs.appendChild(b)});
+ const g=$('grid');g.innerHTML='';
+ SPECIES.filter(x=>x.ser===collSer).forEach(s=>{const has=owned.includes(s.id);const d=document.createElement('div');d.className='cell r'+s.r+(has?'':' lock');
+  if(!has&&s.r===2){const q=document.createElement('span');q.className='q';q.textContent='?';d.appendChild(q)}else d.appendChild(thumb(s.id,48,!has,shinyOwn[s.id]));
+  if(has&&stars[s.id]){const st=document.createElement('span');st.className='st';st.textContent='★'.repeat(stars[s.id]);d.appendChild(st)}
+  if(shinyOwn[s.id]){const sh=document.createElement('span');sh.className='sh';sh.textContent='✨';d.appendChild(sh)}
+  d.onclick=()=>{$('collInfo').innerHTML=has?`<b>${T('s_'+s.id)}</b> · ${T('rar'+s.r)}${stars[s.id]?' · '+'★'.repeat(stars[s.id]):''}${shinyOwn[s.id]?' · ✨':''}<br>${T('t_'+s.trait)}`:T('locked')};g.appendChild(d)});
+ $('collN').textContent=T('collN',{a:owned.length,b:SPECIES.length});$('collInfo').textContent='';
+ const sk=SER[collSer].skin;$('setReward').textContent=serDone(collSer)?T('setDone',{r:T('sk_'+sk)}):T('setTodo',{r:T('sk_'+sk)});
+ showLayer('collL')}
+$('collBack').onclick=()=>{showLayer(collFrom);if(collFrom==='title')applyText()};
+
+/* blind box */
+let boxFrom='title',boxState='idle',boxT=0,boxRes=null,boxSer='pals',boxShiny=false,adBox=store.get('adBox',{d:'',n:0});
+const AD_BOXES=3;
+function adBoxLeft(){return adBox.d===today()?AD_BOXES-adBox.n:AD_BOXES}
+function openBox(from){boxFrom=from;boxState='idle';boxRes=null;if(!seriesOpen(boxSer))boxSer='pals';showLayer('boxL');$('boxT').textContent=T('boxTitle');refreshBox()}
+function fmtT(ms){const t=Math.max(0,Math.ceil(ms/1000));const h=t/3600|0,m=(t%3600)/60|0,s2=t%60;return(h?h+':':'')+String(m).padStart(h?2:1,'0')+':'+String(s2).padStart(2,'0')}
+function refreshBox(){
+ const tabs=$('boxTabs');tabs.innerHTML='';SERIES.forEach(x=>{const b=document.createElement('button');const open=seriesOpen(x.id);b.className='tab'+(x.id===boxSer?' on':'')+(open?'':' lock');
+  b.textContent=open?T('ser_'+x.id):T('serLock2',{n:20});b.onclick=()=>{if(!open||boxState==='shake')return;boxSer=x.id;boxState='idle';refreshBox()};tabs.appendChild(b)});
+ const go=$('boxGo'),free=freeReady();
+ if(boxState==='idle')$('boxS').textContent=free||coins>=BOX_COST?T('boxTap'):T('boxNeed',{c:BOX_COST});
+ go.textContent=free?T('boxFree'):T('boxCost',{c:BOX_COST})+'  ('+coins+')';go.disabled=(!free&&coins<BOX_COST)||boxState==='shake';
+ const ad=$('boxAd'),left=adBoxLeft();ad.textContent=left>0?T('boxAd',{n:left}):T('boxAdNone');ad.disabled=left<=0||boxState==='shake';ad.hidden=free;
+ $('boxNext').textContent=!free?T('boxNextIn',{t:fmtT(freeAt-Date.now())}):''}
+function roll(ser){if(store.get('firstBox',false)){store.set('firstBox',false);const nw=SPECIES.filter(s=>s.ser===ser&&s.r===0&&!owned.includes(s.id));if(nw.length)return nw[Math.random()*nw.length|0].id}
+ const r=Math.random();const rar=r<0.03?2:r<0.28?1:0;const pool=SPECIES.filter(s=>s.ser===ser&&s.r===rar);return pool[Math.random()*pool.length|0].id}
+function startBox(){boxState='shake';boxT=0;boxRes=roll(boxSer);boxShiny=Math.random()<0.05;missAdd('box',1);refreshBox();ac()}
+function doBox(){if(boxState==='shake')return;
+ if(tokens>0){tokens--;store.set('tokens',tokens)}
+ else if(Date.now()>=freeAt){freeAt=Date.now()+4*3600*1000;store.set('freeAt',freeAt)}
+ else{if(coins<BOX_COST)return;coins-=BOX_COST;store.set('coins',coins)}
+ startBox()}
+$('boxGo').onclick=doBox;
+$('boxAd').onclick=()=>{if(boxState==='shake'||adBoxLeft()<=0)return;Ads.rewarded(ok=>{if(!ok)return;if(adBox.d!==today())adBox={d:today(),n:0};adBox.n++;store.set('adBox',adBox);startBox()})};
+$('boxCv').onclick=()=>{if(boxState!=='shake')doBox()};
+$('boxBack').onclick=()=>{if(boxState==='shake')return;$('oTotal').textContent=coins;$('leTotal').textContent=coins;updBoxBtn();showLayer(boxFrom);if(boxFrom==='title')applyText()};
+setInterval(()=>{if(!$('boxL').hidden&&boxState!=='shake')$('boxNext').textContent=!freeReady()?T('boxNextIn',{t:fmtT(freeAt-Date.now())}):'';if(!$('title').hidden)updBoxBtn()},1000);
+function revealBox(){const s=SP[boxRes];const id=boxRes,nm=T('s_'+id);let msg;
+ if(!owned.includes(id)){owned.push(id);store.set('owned',owned);msg=`<b>${T('boxNew',{n:nm})}</b> · ${T('rar'+s.r)}<br>${T('t_'+s.trait)}`}
+ else if((stars[id]||0)<3){stars[id]=(stars[id]||0)+1;store.set('stars',stars);msg=T('starUp',{n:nm,s:stars[id]})}
+ else{const back=[30,45,90][s.r];coins+=back;store.set('coins',coins);msg=T('starMax',{n:nm,c:back})}
+ if(boxShiny){shinyOwn[id]=true;store.set('shiny',shinyOwn);msg=`<b>${T('shiny')}</b><br>`+msg}
+ $('boxS').innerHTML=msg;SFX.reveal(boxShiny?2:s.r);refreshBox()}
+function boxTick(dt){if($('boxL').hidden)return;const c=$('boxCv').getContext('2d');c.clearRect(0,0,360,360);
+ if(boxState==='shake'){boxT+=dt;if(Math.floor(boxT*10)!==Math.floor((boxT-dt)*10))SFX.box();if(boxT>1.3){boxState='open';boxT=0;revealBox()}}
+ if(boxState==='open'){boxT+=dt;const s=SP[boxRes];
+  // rays
+  c.save();c.translate(180,190);c.rotate(boxT*0.6);const rc=['#ffe3f0','#d8e6ff','#ffe08a'][s.r];c.fillStyle=rc;for(let i=0;i<12;i++){c.rotate(Math.PI/6);c.beginPath();c.moveTo(0,0);c.lineTo(-22,-200);c.lineTo(22,-200);c.fill()}c.restore();
+  const k=Math.min(1,boxT*3);const p={s,w:s.w,h:s.h,sq:Math.sin(boxT*14)*0.25*Math.max(0,1-boxT),blinkT:9,shiny:boxShiny};const sc=(['bunny','uni','fin','dragon','bat'].includes(s.ears)?1.7:2.1)*(0.4+0.6*k)*(1+0.05*Math.sin(boxT*4));drawPiece(p,180,270,0,1,1,c,sc);
+  c.font='900 26px Nunito,sans-serif';c.textAlign='center';c.fillStyle=['#ff5ca0','#4b7bff','#d99000'][s.r];c.fillText(T('rar'+s.r)+(boxShiny?' ✨':''),180,340);return}
+ // box
+ const sh=boxState==='shake'?Math.sin(boxT*50)*(4+boxT*8):0;const bob=boxState==='idle'?Math.sin(performance.now()/300)*4:0;
+ c.save();c.translate(180+sh,200+bob);c.rotate(sh*0.01);
+ const bc=SER[boxSer].box;c.fillStyle=bc[0];c.strokeStyle=bc[1];c.lineWidth=6;rrc(c,-80,-60,160,130,20);c.fill();c.stroke();
+ c.fillStyle=bc[2];rrc(c,-92,-92,184,44,16);c.fill();c.stroke();
+ c.fillStyle='#ffc83d';c.fillRect(-14,-92,28,162);
+ c.font='900 64px Nunito,sans-serif';c.textAlign='center';c.fillStyle='#fff';c.fillText('?',0,40);
+ c.restore()}
+function rrc(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
+
+/* title hero */
+function heroTick(){if($('title').hidden)return;const c=$('hero').getContext('2d');c.clearRect(0,0,360,190);const ids=owned.slice(-3);while(ids.length<3)ids.unshift(START[ids.length]);
+ let y=182;const t=performance.now()/1000;ids.forEach((id,i)=>{const s=SP[id];const sc=0.82;const p={s,w:s.w,h:s.h,sq:Math.sin(t*3+i)*0.08,blinkT:(t+i)%3};const x=180+Math.sin(t*1.6)*6*i;drawPiece(p,x,y,Math.sin(t*1.6)*0.04*i,1,1,c,sc);y-=s.h*sc})}
+
+/* loop */
+let last=performance.now();
+function frame(now){const dt=Math.min(0.05,(now-last)/1000);last=now;if(!paused&&!userPaused){update(dt);tutTick(dt)}render();boxTick(dt);heroTick();requestAnimationFrame(frame)}
+// title background: a little demo tower
+function demo(){['capy','dump','axo','cro','mochi'].forEach((id,i)=>{const p=mkPiece(id);p.lx=240+(i%2?8:-6);p.y=topY();G.tower.push(p)});G.sway=6}
+demo();applyText();showLayer('title');requestAnimationFrame(frame);
+try{if(window.PokiSDK){PokiSDK.init().catch(()=>{}).then(()=>{try{PokiSDK.gameLoadingFinished()}catch(e){}})}}catch(e){}
+if(tutDone&&dailyReady()&&!new URLSearchParams(location.search).get('auto'))setTimeout(()=>{if(!$('title').hidden)openDaily()},700);
+// title idle: keep the demo tower swaying
+setInterval(()=>{if(G.state==='title'){G.phase+=0.05;G.sway=6}},50);
+
+})();
+</script>
+</body>
+</html>
