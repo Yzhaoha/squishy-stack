@@ -2,3 +2,5 @@
 exclude:
   - poki
   - tools
+  - docs
+  - CLAUDE.md
