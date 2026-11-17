@@ -33,12 +33,11 @@ CG 上没有「吊钩叠塔」直接竞品。最接近的：
 
 ## 美术进度（重要）
 - 在用户 yzhao185 那个 Chrome 的 ChatGPT（Plus）里，对话「Generate Capybara Image」（chatgpt.com/c/6afab9af-1c78-83e8-a2db-b3249059090f）已画好 **水豚 capy、饺子 dump、六角恐龙 axo** 三张，风格统一（软亮捏捏质感、黑豆眼、腮红、扁宽）。
-- 水豚是透明背景；饺子、六角恐龙页面上看底色发白，可能要自己去背景。
-- **还没下载**（浏览器自动化的下载操作被权限拦了）→ 让用户下载后放进 `art/` 发过来。
+- **三张原图已放进本仓库 `art/characters/`**：capy.png、dump.png、axo.png（1536×1024，都是真透明背景 RGBA；可见部分宽高比约 1.79 / 1.88 / 1.93，四周有空边要裁掉；边缘有淡淡半透明，裁边时用 alpha>40 判断）。
 - 剩下 31 只继续在**同一个 ChatGPT 对话**里画，每次开头说 "Same style, lighting, face and canvas as the capybara"。
 
 ## 下一步
-1. 拿到 3 张图 → 去背景、裁边、压成 WebP 内嵌进 index.html（保持单文件、不发外部请求）；没有图的角色用原来的代码画法兜底。
+1. 用 `art/characters/` 里的 3 张图 → 裁边、压成 WebP 内嵌进 index.html（保持单文件、不发外部请求）；没有图的角色用原来的代码画法兜底。
 2. 加压扁回弹等「捏」手感 → push 到本仓库 → 给用户 Pages 链接（加 `?v=N` 避缓存）在电脑和手机上看。
 3. 用户满意 → 画剩下 31 只 → 背景、盲盒 → 第 3–7 条 → 做 CG 版投 CrazyGames。
 

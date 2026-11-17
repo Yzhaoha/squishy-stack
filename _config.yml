@@ -4,3 +4,4 @@ exclude:
   - tools
   - docs
   - CLAUDE.md
+  - art
