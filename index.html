@@ -752,7 +752,7 @@ function update(dt){
  if(G.topple){G.topple.t+=dt}
  // hook centre and camera follow the tower top sideways
  G.hookC+=(topLocalX()-G.hookC)*Math.min(1,dt*2.5);
- G.camX+=((G.state==='title'?0:topLocalX()-240)*0.7-G.camX)*Math.min(1,dt*2);
+ G.camX+=((G.state==='title'?(CW>CH*1.25?CW*(CW<1000?0.58:0.3)/S:0):topLocalX()-240)*0.7-G.camX)*Math.min(1,dt*2);
  // camera
  const target=Math.max(0,topY()-(VH-GROUND)*0.42);
  G.cam+=(target-G.cam)*Math.min(1,dt*3.2);
@@ -1087,7 +1087,7 @@ $('oHome').onclick=goTitle;
 $('bColl').onclick=()=>openColl('title');$('oColl').onclick=()=>openColl('over');
 $('bShop').onclick=()=>openBox('title');$('oBox').onclick=()=>{$('oBox').classList.remove('pulse');openBox('over')};
 $('skWave').onclick=e=>{e.stopPropagation();useWave()};$('skBlink').onclick=e=>{e.stopPropagation();useBlink()};
-function goTitle(){gp(false);BASE.w=200;G.mode='endless';G.lvl=null;G.wind=0;G.state='title';G.tower=[];G.lost=[];G.falling=null;G.topple=null;G.cam=0;showLayer('title');applyText()}
+function goTitle(){gp(false);BASE.w=200;G.mode='endless';G.lvl=null;G.wind=0;G.state='title';G.tower=[];G.lost=[];G.falling=null;G.topple=null;G.cam=0;demo();showLayer('title');applyText()}
 
 cv.addEventListener('pointerdown',e=>{if(G.state==='play'){drop()}});
 function pauseGame(){if(G.state!=='play'||userPaused||adActive)return;userPaused=true;gp(false);try{AC&&AC.suspend()}catch(e){}$('pauseL').hidden=false;updSkills()}
@@ -1187,7 +1187,7 @@ function heroTick(){if($('title').hidden)return;const c=$('hero').getContext('2d
 let last=performance.now();
 function frame(now){const dt=Math.min(0.05,(now-last)/1000);last=now;if(!paused&&!userPaused){update(dt);tutTick(dt)}render();boxTick(dt);heroTick();requestAnimationFrame(frame)}
 // title background: a little demo tower
-function demo(){['capy','dump','axo','cro','mochi'].forEach((id,i)=>{const p=mkPiece(id);p.lx=240+(i%2?8:-6);p.y=topY();G.tower.push(p)});G.sway=6}
+function demo(){['capy','dump','axo','dump','capy','axo'].forEach((id,i)=>{const p=mkPiece(id);p.shiny=false;p.lx=240+(i%2?8:-6);p.y=topY();G.tower.push(p)});G.sway=6}
 demo();applyText();showLayer('title');requestAnimationFrame(frame);
 try{if(window.PokiSDK){PokiSDK.init().catch(()=>{}).then(()=>{try{PokiSDK.gameLoadingFinished()}catch(e){}})}}catch(e){}
 if(tutDone&&dailyReady()&&!new URLSearchParams(location.search).get('auto'))setTimeout(()=>{if(!$('title').hidden)openDaily()},700);
