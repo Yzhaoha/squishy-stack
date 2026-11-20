@@ -56,6 +56,10 @@ CG 上没有「吊钩叠塔」直接竞品。最接近的：
 - 11-20 夜 v5.8：art-todo 全部画完并入库（43 张）。34 只角色全部有图；道具/背景/盲盒走 embed_art.py 的 PROPS 表 → index.html 的 `/*PROPS*/`，运行时 PIMG[key]：coin（coinIcon）、bird（drawSky）、base（只替换 pink 皮肤，其他 7 个底座皮肤仍是代码画）、box_<系列>（盲盒界面）、bg_<系列>（drawBg：关卡按系列，无尽按高度 pals→cafe→dream 渐变，随镜头从地面滚到天空；有背景时不画代码草地）。index.html 约 1.05MB。**美术只剩：capy/dump/axo 旧风格待重画；7 个底座皮肤、界面 emoji 图标仍非正式美术。**
 - v5.9：背景音乐（MUS + musicTick，WebAudio 合成的八音盒循环，8 小节 C–Am–F–G；甜点系列升调、梦幻夜降调放慢、狂热时加速；静音/广告/暂停时停）。落地音效加了回弹尾音。**云端听不到声音，只验证了调度/静音/暂停逻辑，好不好听要用户自己听。** 没用任何音频文件。
 
+## 参考：Pogo Post 过了 CrazyGames 审核（11-19 提交，11-20 通过进 Basic Launch）
+公开仓库 `Yzhaoha/pogo-post`，读 `docs/STATUS.md`。它过审时：**画面是代码画的**、单文件 150KB、音乐音效也是代码合成；但有 **90 关 9 章，每章有新机制**（风、风扇、弹床、狗、悬浮平台、冰、雾、雷雨）+ 无尽模式 + 连击计分 + 换装商店 + 11 语言。结论：CG 卡的主要是玩法的深度和变化，不是美术。本游戏现在美术比它强，但 30 关只是数字不同——**优先做每章的新机制**。
+可直接借用：`tools/build.py` 里的 CG SDK v3 适配层（把 PokiSDK 形状的接口接到 CrazyGames.SDK，含 muteAudio、locale、midgame/rewarded）、`tools/make-video.js`（预览视频）、`tools/make-covers.js`（封面加字）、`submission/表单文字-CrazyGames.md` 的格式。Pogo Post 用的是「账号 C」（QQ 邮箱，后台 Welcome, Nick），该账号现在没有游戏在等审核。
+
 ## 下一步
 1. 用 `art/characters/` 里的 3 张图 → 裁边、压成 WebP 内嵌进 index.html（保持单文件、不发外部请求）；没有图的角色用原来的代码画法兜底。
 2. 加压扁回弹等「捏」手感 → push 到本仓库 → 给用户 Pages 链接（加 `?v=N` 避缓存）在电脑和手机上看。
