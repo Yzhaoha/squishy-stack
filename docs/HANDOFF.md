@@ -46,6 +46,13 @@ CG 上没有「吊钩叠塔」直接竞品。最接近的：
 - v5.6：用户说备用位和下一只预览都没用（「又不是俄罗斯方块」）→ 都删了，三连关（tri 过关条件）也取消。保留：同款三连奖励（纯运气奖励）、每关 4 只阵容。**教训：这游戏靠手感和时机，别加规划类玩法。**
 - 11-20：对比线上游戏后定的补齐顺序：①美术全换（31 只 + 鸟/金币/底座 + 3 背景 + 3 盲盒，用户照 `docs/art-todo.md` 在 ChatGPT 里画，传到 art/characters/）②背景音乐和像样音效 ③真正不同的关卡（移动底座、变窄）④标题页重做。这个游戏还没投过 CrazyGames，补完再投。
 
+## 美术进度 11-20（本机会话在 D:\claude美术\squishy-stack 用 Chrome 里的 ChatGPT 画）
+- **风格改了**：用户要求「更粉嫩可爱」——粉彩暖粉色调、腮红更大更粉、眼睛更大带白色星星高光、身体更圆更胖，保留光泽捏捏质感。提示词开头用 "Generate an image now. Same pinker, cuter style ... as the new pastel ..."，颜色在 art-todo.md 原色上调成粉彩。ChatGPT 已把这条风格写进记忆。
+- 萌宠系列 11 只已画完（新风格，透明 PNG）：cow frog shiba rpanda shark peng cat bear sloth dino gcapy。shark 是 1774×887，其余 1536×1024；rpanda 尾巴绕在侧面；dino 背刺黄色略高出背；可见宽高比普遍比目标宽 0.1–0.15。
+- **图只在本机，还没进仓库**（那台电脑没装 git）。用网页上传：github.com/yzhaoha/squishy-stack/upload/main/art/characters
+- **capy / dump / axo 是旧风格，要按新风格重画**，否则有色差。
+- 接下来：甜点 11 只 → 梦幻夜 9 只 → 小物件 → 背景 → 盲盒。图进仓库后跑 `python3 tools/embed_art.py --debug 目录` 检查身体框和眼睛（新风格眼睛带星星高光，眼睛检测可能要调）。
+
 ## 下一步
 1. 用 `art/characters/` 里的 3 张图 → 裁边、压成 WebP 内嵌进 index.html（保持单文件、不发外部请求）；没有图的角色用原来的代码画法兜底。
 2. 加压扁回弹等「捏」手感 → push 到本仓库 → 给用户 Pages 链接（加 `?v=N` 避缓存）在电脑和手机上看。
