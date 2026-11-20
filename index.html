@@ -350,9 +350,31 @@ addEventListener('resize',resize);resize();
 let AC=null;
 function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
 function tone(f,f2,dur,type,vol,delay){if(muted||adMute)return;const a=ac();if(!a)return;const t=a.currentTime+(delay||0);const o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+dur);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol||0.2,t+0.012);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(g).connect(a.destination);o.start(t);o.stop(t+dur+0.02)}
+/* ---- background music: a small music-box loop, synthesised (no audio files) ---- */
+const MUS={g:null,noise:null,next:0,step:0,vol:0.2,
+ mel:[76,0,79,0,76,72,74,76, 72,0,76,0,69,0,72,0, 77,0,81,0,77,74,76,77, 74,0,79,0,74,71,74,0,
+      79,0,76,0,84,0,79,76, 81,0,76,0,72,74,76,0, 77,79,81,0,77,0,74,0, 79,0,74,0,71,74,79,0],
+ bass:[48,45,41,43],chord:[[60,64,67],[57,60,64],[60,65,69],[59,62,67]]};
+function mHz(m){return 440*Math.pow(2,(m-69)/12)}
+function mNote(m,t,dur,vol,type){const a=AC,o=a.createOscillator(),g=a.createGain();o.type=type||'triangle';o.frequency.value=mHz(m);
+ g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+0.008);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(g).connect(MUS.g);o.start(t);o.stop(t+dur+0.03)}
+function mHat(t,vol){const a=AC;if(!MUS.noise){const b=a.createBuffer(1,a.sampleRate*0.2,a.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;MUS.noise=b}
+ const n=a.createBufferSource();n.buffer=MUS.noise;const f=a.createBiquadFilter();f.type='highpass';f.frequency.value=6500;const g=a.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(0.0001,t+0.05);n.connect(f).connect(g).connect(MUS.g);n.start(t);n.stop(t+0.07)}
+function musicTick(){const a=AC;if(!a||a.state!=='running')return;
+ if(!MUS.g){MUS.g=a.createGain();MUS.g.gain.value=0;MUS.g.connect(a.destination);MUS.next=a.currentTime+0.1}
+ const on=!muted&&!adMute&&!userPaused;MUS.g.gain.setTargetAtTime(on?MUS.vol:0,a.currentTime,0.08);
+ if(MUS.next<a.currentTime-0.3)MUS.next=a.currentTime+0.05;
+ const fever=G.fever>0&&G.state==='play';const ser=G.state==='title'?'pals':G.lvl?G.lvl.ser:bgCur||'pals';
+ const tr=ser==='cafe'?5:ser==='dream'?-2:0;const spb=60/(ser==='dream'?100:112)/(fever?1.22:1)/2; // seconds per 8th note
+ while(MUS.next<a.currentTime+0.25){const i=MUS.step%64,bar=(i>>3)%4,k=i&7,t=MUS.next;
+  const m=MUS.mel[i];if(m){mNote(m+tr,t,0.42,0.5);mNote(m+tr+12,t,0.2,fever?0.22:0.1,'sine')}
+  if(k===0||k===4)mNote(MUS.bass[bar]+tr,t,0.5,0.55);
+  if(k&1)mNote(MUS.chord[bar][(k>>1)%3]+tr,t,0.25,0.16);
+  if(k===2||k===6)mHat(t,0.1);else if(fever&&(k&1))mHat(t,0.06);
+  MUS.next+=spb;MUS.step++}}
 const SFX={
  drop(){tone(520,300,0.12,'triangle',0.08)},
- squish(c){const p=1+Math.min(c,10)*0.06;tone(180*p,90*p,0.18,'sine',0.35);tone(700*p,1100*p,0.07,'triangle',0.06,0.02)},
+ squish(c){const p=1+Math.min(c,10)*0.06;tone(230*p,95*p,0.2,'sine',0.38);tone(95*p,150*p,0.16,'sine',0.2,0.1);tone(620*p,1050*p,0.08,'triangle',0.07,0.02)},
  perfect(c){const b=660*Math.pow(1.06,Math.min(c,12));tone(b,0,0.12,'triangle',0.15);tone(b*1.5,0,0.16,'triangle',0.12,0.07)},
  miss(){tone(400,140,0.4,'sawtooth',0.07)},
  coin(){tone(1200,1600,0.06,'square',0.04)},
@@ -1172,6 +1194,8 @@ $('skWave').onclick=e=>{e.stopPropagation();useWave()};$('skBlink').onclick=e=>{
 function goTitle(){gp(false);BASE.w=200;G.mode='endless';G.lvl=null;G.wind=0;G.state='title';G.tower=[];G.airs=[];G.birds=[];G.fever=0;G.lost=[];G.falling=null;G.topple=null;G.cam=0;demo();showLayer('title');applyText()}
 
 cv.addEventListener('pointerdown',e=>{if(G.state==='play'){drop()}});
+// first tap or key press anywhere starts the audio (browsers block sound before that)
+for(const ev of ['pointerdown','keydown'])addEventListener(ev,()=>{if(!muted&&!adMute&&!userPaused)ac()},{capture:true});
 function pauseGame(){if(G.state!=='play'||userPaused||adActive)return;userPaused=true;gp(false);try{AC&&AC.suspend()}catch(e){}$('pauseL').hidden=false;updSkills()}
 function resumeGame(){if(!userPaused||adActive)return;$('pauseL').hidden=true;adBreak(()=>{userPaused=false;last=performance.now();if(!adMute)try{AC&&AC.resume()}catch(e){}if(G.state==='play')gp(true);updSkills()})}
 $('pauseB').onclick=e=>{e.stopPropagation();pauseGame()};$('pzGo').onclick=resumeGame;
@@ -1288,7 +1312,7 @@ function heroTick(){if($('title').hidden)return;const c=$('hero').getContext('2d
 
 /* loop */
 let last=performance.now();
-function frame(now){const dt=Math.min(0.05,(now-last)/1000);last=now;if(!paused&&!userPaused){update(dt);tutTick(dt)}render();boxTick(dt);heroTick();toyTick(dt);requestAnimationFrame(frame)}
+function frame(now){const dt=Math.min(0.05,(now-last)/1000);last=now;if(!paused&&!userPaused){update(dt);tutTick(dt)}render();boxTick(dt);heroTick();toyTick(dt);musicTick();requestAnimationFrame(frame)}
 // title background: a little demo tower
 function demo(){['capy','dump','axo','dump','capy','axo'].forEach((id,i)=>{const p=mkPiece(id);p.shiny=false;p.lx=240+(i%2?8:-6);p.y=topY();G.tower.push(p)});G.sway=6}
 demo();applyText();showLayer('title');requestAnimationFrame(frame);
@@ -1300,7 +1324,7 @@ setInterval(()=>{if(G.state==='title'){G.phase+=0.05;G.sway=6}},50);
 /*TEST*/
 const q=new URLSearchParams(location.search);
 if(q.get('auto')){G.auto=true;G.botSkill=+(q.get('sk')||0.06);setTimeout(startRun,300)}
-window.__sq={G,openToy,step:update,render,startRun,drop,choose,useWave,useBlink,openBox,openColl,openDaily,openMiss,goTitle,get coins(){return coins},set coins(v){coins=v},owned,SP,SPECIES,stars,shinyOwn,get MS(){return MS},setBest(v){best=v},setSkin(k){skin=k},revive,finishRun,openLb,weekBest,rivalList,get runTargets(){return runTargets},setTut(v){tutDone=v;tutSeen={}},tutTick,get tipKey(){return tipKey},LEVELS,get LP(){return LP},INV,openStart,openMap,openShop,goStart,get coinsAll(){return coins}};
+window.__sq={G,MUS,openToy,step:update,render,startRun,drop,choose,useWave,useBlink,openBox,openColl,openDaily,openMiss,goTitle,get coins(){return coins},set coins(v){coins=v},owned,SP,SPECIES,stars,shinyOwn,get MS(){return MS},setBest(v){best=v},setSkin(k){skin=k},revive,finishRun,openLb,weekBest,rivalList,get runTargets(){return runTargets},setTut(v){tutDone=v;tutSeen={}},tutTick,get tipKey(){return tipKey},LEVELS,get LP(){return LP},INV,openStart,openMap,openShop,goStart,get coinsAll(){return coins}};
 /*ENDTEST*/
 })();
 </script>
