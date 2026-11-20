@@ -99,7 +99,9 @@ def main():
             continue
         sid = fn[:-4]
         m = re.search(r"\{id:'%s',[^}]*?w:(\d+),h:(\d+)" % re.escape(sid), html)
-        assert m, 'no species with id ' + sid
+        if not m:
+            print('%-6s skipped (not a character id; props/backgrounds are handled separately)' % sid)
+            continue
         w, h = int(m.group(1)), int(m.group(2))
         meta, d = analyse(os.path.join(SRC, fn), w / h, OVERRIDE.get(sid, {}))
         art[sid] = meta
