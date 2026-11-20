@@ -52,6 +52,7 @@ CG 上没有「吊钩叠塔」直接竞品。最接近的：
 - **图只在本机，还没进仓库**（那台电脑没装 git）。用网页上传：github.com/yzhaoha/squishy-stack/upload/main/art/characters
 - **capy / dump / axo 是旧风格，要按新风格重画**，否则有色差。
 - 接下来：甜点 11 只 → 梦幻夜 9 只 → 小物件 → 背景 → 盲盒。图进仓库后跑 `python3 tools/embed_art.py --debug 目录` 检查身体框和眼睛（新风格眼睛带星星高光，眼睛检测可能要调）。
+- 11-20 晚：用户网页上传了 22 张新风格图（萌宠 11 + 甜点 11），已嵌入（v5.7，共 25 只有图，index.html 约 690KB）。embed_art.py 改动：关掉眨眼（BLINK=False，新风格大眼睛盖一层不好看）；图和碰撞框比例差超过 4% 时改碰撞高度（ART[id].h，如 boba 80→105、shark 62→47）而不是压扁图。**还缺：梦幻夜 9 只；capy/dump/axo 仍是旧风格待重画；鸟/金币/底座/背景/盲盒。**
 
 ## 下一步
 1. 用 `art/characters/` 里的 3 张图 → 裁边、压成 WebP 内嵌进 index.html（保持单文件、不发外部请求）；没有图的角色用原来的代码画法兜底。

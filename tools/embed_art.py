@@ -18,8 +18,9 @@ from PIL import Image, ImageDraw
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, 'art', 'characters')
-OUT_W = 448        # px width of the embedded image
-QUALITY = 84
+OUT_W = 400        # px width of the embedded image
+QUALITY = 80
+BLINK = False     # the pastel style has big sparkly eyes; a painted-over blink looks wrong
 # manual fixes per id if the automatic body box / eyes are off: {'id': {'L':..,'R':..,'top':..}}
 OVERRIDE = {}
 
@@ -32,7 +33,8 @@ def longest_run(col):
     return best
 
 
-def analyse(path, box_ratio, ov):
+def analyse(path, box_w, box_h, ov):
+    box_ratio = box_w / box_h
     im = Image.open(path).convert('RGBA')
     A = np.array(im)
     ys, xs = np.where(A[:, :, 3] > 40)
@@ -53,6 +55,10 @@ def analyse(path, box_ratio, ov):
     # sideways overhang and a little vertical stretch
     e = ((R - L) * W) / ((bot - top) * H) / box_ratio
     kx = min(max(e ** 0.5, 0.93), 1.08)
+    # if the art is much taller / flatter than the collision box, change the box height instead of squeezing the picture
+    new_h = None
+    if abs(e / kx - 1) > 0.04:
+        new_h = round(box_w * kx / (((R - L) * W) / ((bot - top) * H)))
     dw = kx / (R - L)
     dx = -kx / 2 - L * dw
     dh = 1 / (bot - top)
@@ -82,10 +88,12 @@ def analyse(path, box_ratio, ov):
     buf = io.BytesIO()
     small.save(buf, 'WEBP', quality=QUALITY, method=6)
     meta = {'d': [round(v, 4) for v in (dx, dy, dw, dh)], 'ar': round(W / H, 4)}
-    if len(eyes) == 2:
+    if new_h:
+        meta['h'] = new_h
+    if BLINK and len(eyes) == 2:
         meta['e'] = [[round(e_[0], 4), round(e_[1], 4), round(e_[2], 4), e_[3]] for e_ in eyes]
     meta['u'] = 'data:image/webp;base64,' + base64.b64encode(buf.getvalue()).decode()
-    dbg = dict(im=im, L=L, R=R, top=top, bot=bot, eyes=eyes, e=e, kx=kx, kb=len(buf.getvalue()))
+    dbg = dict(im=im, L=L, R=R, top=top, bot=bot, eyes=eyes, e=e, kx=kx, new_h=new_h, kb=len(buf.getvalue()))
     return meta, dbg
 
 
@@ -103,9 +111,9 @@ def main():
             print('%-6s skipped (not a character id; props/backgrounds are handled separately)' % sid)
             continue
         w, h = int(m.group(1)), int(m.group(2))
-        meta, d = analyse(os.path.join(SRC, fn), w / h, OVERRIDE.get(sid, {}))
+        meta, d = analyse(os.path.join(SRC, fn), w, h, OVERRIDE.get(sid, {}))
         art[sid] = meta
-        print('%-6s %4.1f KB  body/box ratio %.3f  overhang x%.3f  eyes %d' % (sid, d['kb'] / 1024, d['e'], d['kx'], len(d['eyes'])))
+        print('%-6s %4.1f KB  body/box ratio %.3f  overhang x%.3f  box h %s' % (sid, d['kb'] / 1024, d['e'], d['kx'], '%d -> %d' % (h, d['new_h']) if d['new_h'] else h))
         if dbg_dir:
             im = d['im'].copy()
             W, H = im.size
