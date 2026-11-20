@@ -53,6 +53,7 @@ CG 上没有「吊钩叠塔」直接竞品。最接近的：
 - **capy / dump / axo 是旧风格，要按新风格重画**，否则有色差。
 - 接下来：甜点 11 只 → 梦幻夜 9 只 → 小物件 → 背景 → 盲盒。图进仓库后跑 `python3 tools/embed_art.py --debug 目录` 检查身体框和眼睛（新风格眼睛带星星高光，眼睛检测可能要调）。
 - 11-20 晚：用户网页上传了 22 张新风格图（萌宠 11 + 甜点 11），已嵌入（v5.7，共 25 只有图，index.html 约 690KB）。embed_art.py 改动：关掉眨眼（BLINK=False，新风格大眼睛盖一层不好看）；图和碰撞框比例差超过 4% 时改碰撞高度（ART[id].h，如 boba 80→105、shark 62→47）而不是压扁图。**还缺：梦幻夜 9 只；capy/dump/axo 仍是旧风格待重画；鸟/金币/底座/背景/盲盒。**
+- 11-20 夜 v5.8：art-todo 全部画完并入库（43 张）。34 只角色全部有图；道具/背景/盲盒走 embed_art.py 的 PROPS 表 → index.html 的 `/*PROPS*/`，运行时 PIMG[key]：coin（coinIcon）、bird（drawSky）、base（只替换 pink 皮肤，其他 7 个底座皮肤仍是代码画）、box_<系列>（盲盒界面）、bg_<系列>（drawBg：关卡按系列，无尽按高度 pals→cafe→dream 渐变，随镜头从地面滚到天空；有背景时不画代码草地）。index.html 约 1.05MB。**美术只剩：capy/dump/axo 旧风格待重画；7 个底座皮肤、界面 emoji 图标仍非正式美术。**
 
 ## 下一步
 1. 用 `art/characters/` 里的 3 张图 → 裁边、压成 WebP 内嵌进 index.html（保持单文件、不发外部请求）；没有图的角色用原来的代码画法兜底。

@@ -97,13 +97,41 @@ def analyse(path, box_w, box_h, ov):
     return meta, dbg
 
 
+# props, blind boxes and backgrounds: id -> (output width in px, quality). Backgrounds are opaque.
+PROPS = {'bird': (160, 82), 'coin': (128, 82), 'base': (480, 82),
+         'box_pals': (300, 82), 'box_cafe': (300, 82), 'box_dream': (300, 82),
+         'bg_pals': (768, 76), 'bg_cafe': (768, 76), 'bg_dream': (768, 76)}
+
+
+def embed_props():
+    out = {}
+    for name, (ow, q) in PROPS.items():
+        path = os.path.join(SRC, name + '.png')
+        if not os.path.exists(path):
+            continue
+        im = Image.open(path)
+        if im.mode == 'RGBA':
+            A = np.array(im)
+            ys, xs = np.where(A[:, :, 3] > 40)
+            im = im.crop((xs.min(), ys.min(), xs.max() + 1, ys.max() + 1))
+        else:
+            im = im.convert('RGB')
+        W, H = im.size
+        im = im.resize((ow, round(ow * H / W)), Image.LANCZOS)
+        buf = io.BytesIO()
+        im.save(buf, 'WEBP', quality=q, method=6)
+        out[name] = 'data:image/webp;base64,' + base64.b64encode(buf.getvalue()).decode()
+        print('%-9s %4.1f KB  %dx%d' % (name, len(buf.getvalue()) / 1024, im.width, im.height))
+    return out
+
+
 def main():
     dbg_dir = sys.argv[sys.argv.index('--debug') + 1] if '--debug' in sys.argv else None
     html_path = os.path.join(ROOT, 'index.html')
     html = open(html_path, encoding='utf-8').read()
     art = {}
     for fn in sorted(os.listdir(SRC)):
-        if not fn.endswith('.png'):
+        if not fn.endswith('.png') or fn[:-4] in PROPS:
             continue
         sid = fn[:-4]
         m = re.search(r"\{id:'%s',[^}]*?w:(\d+),h:(\d+)" % re.escape(sid), html)
@@ -127,6 +155,9 @@ def main():
     block = '/*ART*/const ART=' + json.dumps(art, separators=(',', ':')) + ';/*ENDART*/'
     html, n = re.subn(r'/\*ART\*/.*?/\*ENDART\*/', lambda _: block, html, flags=re.S)
     assert n == 1, 'ART marker not found in index.html'
+    pblock = '/*PROPS*/const PROPS=' + json.dumps(embed_props(), separators=(',', ':')) + ';/*ENDPROPS*/'
+    html, n = re.subn(r'/\*PROPS\*/.*?/\*ENDPROPS\*/', lambda _: pblock, html, flags=re.S)
+    assert n == 1, 'PROPS marker not found in index.html'
     open(html_path, 'w', encoding='utf-8').write(html)
     print('index.html', len(html.encode()) // 1024, 'KB,', len(art), 'characters with art')
 
