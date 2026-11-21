@@ -264,6 +264,28 @@ A cute blind box toy package, same soft glossy kawaii squishy 3D style as the ca
 A cute blind box toy package, same soft glossy kawaii squishy 3D style as the capybara, front view, transparent background, no shadow, 1024x1024, no text. A rounded box with a big question mark and a ribbon, color: lavender purple (#a99cff).
 ```
 
+## 封面主视觉（CrazyGames 提交用，3 张）
+
+用新的粉嫩风格画，**不要任何文字**（标题我用脚本加）。画完文件名照下面起，放进 `art/source/`。
+
+### 横版 `cover-16x9.png`（1536×1024 或更宽）
+
+```
+Generate an image now. Same pinker, cuter pastel squishy 3D style as the new characters. A wide game cover illustration, no text, no logo. In the centre, a tall wobbly leaning tower of 6 stacked squishy toys: from bottom to top a shiba dog, a steamed bun, a green frog, a pudding, an orange cat and a pink mochi, each squashed a little by the ones above, all with happy faces. Above the tower a small hook on a rope is lowering a squishy capybara that looks excited. A pink cushion under the tower. Background: sunny pastel flower garden with soft hills and fluffy clouds, pink-blue sky, a few gold star coins and a tiny blue bird flying by. Leave empty sky in the top left for a title. 16:9 landscape.
+```
+
+### 竖版 `cover-2x3.png`（1024×1536）
+
+```
+Generate an image now. Same scene and style as the landscape cover, but as a tall 2:3 portrait image, no text, no logo: the wobbly tower of squishy toys fills the lower two thirds, the hook with the capybara is above it, and the top quarter is empty pastel sky for a title.
+```
+
+### 方形 `cover-1x1.png`（1024×1024）
+
+```
+Generate an image now. Same scene and style as the landscape cover, but as a square 1:1 image, no text, no logo: a close-up of the top 4 squishy toys of the tower with the capybara dropping onto them, empty pastel sky at the top for a title.
+```
+
 ## 画好之后怎么给我
 
 最省事：打开 https://github.com/yzhaoha/squishy-stack/upload/main/art/characters ，把 PNG 拖进去，点绿色的 Commit changes。然后跟我说一声「图传了」。

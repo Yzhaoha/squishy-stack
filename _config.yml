@@ -6,3 +6,4 @@ exclude:
   - CLAUDE.md
   - art
   - dist
+  - submission

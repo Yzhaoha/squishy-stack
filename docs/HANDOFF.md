@@ -70,7 +70,8 @@ CG 上没有「吊钩叠塔」直接竞品。最接近的：
 - 标题页：logo 浮在背景上（白字粉描边、轻微浮动）；竖屏时按钮是底部抽屉，展示塔站在抽屉上沿（update 里标题状态镜头目标 = -titleLift()）；横屏仍是居中卡片、塔在左边。展示塔用新风格角色（shiba/bun/frog/…）。#hero 画布已停用。
 - `python3 tools/build_cg.py` → `dist/crazygames/index.html` + `dist/squishy-stack-crazygames.zip`（约 730KB）。适配层搬自 Pogo Post：CG SDK v3 → PokiSDK 形状接口；`window.__sqHost.setPlatMute / setLang`（平台静音、按 CG locale 选语言，玩家手选过语言则不覆盖）。假 SDK 验证过调用顺序：init → loadingStart → loadingStop → gameplayStart/Stop，法语 locale 生效。存档只用 localStorage，没接 CG Data 模块（Pogo Post 也没接，过审了）。
 - **改了 index.html 之后要重新跑 build_cg.py。**
-- 还没做：封面 3 张（1920×1080 / 800×1200 / 800×800）、预览视频、表单文字。
+- 预览视频已录（`node tools/make-video.js`，机器人逐帧录，6 段各 3 秒：飞鸟、狂热、滑动底座、金币、弹弹云、忽明忽暗；`window.__sqManual` 让主循环不自己走）→ `submission/preview-*.mp4`。表单文字在 `submission/表单文字-CrazyGames.md`。
+- **还没做：封面 3 张**（提示词在 art-todo.md 末尾，用户本机会话画，存 art/source/；加字和裁成 1920×1080 / 800×1200 / 800×800 的脚本还没写，可搬 Pogo Post 的 make-covers.js）。封面到位后重跑 make-video.js 给视频加封面首帧。
 
 ## 下一步
 1. 用 `art/characters/` 里的 3 张图 → 裁边、压成 WebP 内嵌进 index.html（保持单文件、不发外部请求）；没有图的角色用原来的代码画法兜底。

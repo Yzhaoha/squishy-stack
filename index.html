@@ -1336,7 +1336,7 @@ function heroTick(){return;if($('title').hidden)return;const c=$('hero').getCont
 
 /* loop */
 let last=performance.now();
-function frame(now){const dt=Math.min(0.05,(now-last)/1000);last=now;if(!paused&&!userPaused){update(dt);tutTick(dt)}render();boxTick(dt);heroTick();toyTick(dt);musicTick();requestAnimationFrame(frame)}
+function frame(now){const dt=Math.min(0.05,(now-last)/1000);last=now;if(!paused&&!userPaused&&!window.__sqManual){update(dt);tutTick(dt)}render();boxTick(dt);heroTick();toyTick(dt);musicTick();requestAnimationFrame(frame)}
 // title background: a little demo tower
 function demo(){(CW>CH*1.25?['shiba','bun','frog','pud','cat','mochi']:CH<700?['shiba','bun','frog']:['shiba','bun','frog','mochi']).forEach((id,i)=>{const p=mkPiece(id);p.shiny=false;p.lx=240+(i%2?8:-6);p.y=topY();G.tower.push(p)});G.sway=6}
 demo();applyText();showLayer('title');requestAnimationFrame(frame);
