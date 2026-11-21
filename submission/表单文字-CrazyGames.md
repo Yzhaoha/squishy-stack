@@ -31,8 +31,8 @@ Squishy Stack
 Squishy Stack is a one-button stacking game with soft, squishy toys. A swinging hook carries a squishy capybara, dumpling, axolotl or one of 30 other characters. Tap at the right moment to drop it onto the tower. Every landing squashes and bounces, the squishies below get pressed flat, and the whole tower leans and wobbles like jelly. Land dead centre for a Perfect, chain three Perfects to start Squishy Fever, and try not to let the tower topple.
 
 Features:
-- 30 levels in 3 worlds: a flower garden, a sweet bakery and a dreamy night sky
-- New twists as you go: wind, birds, sky coins, a sliding base, bouncy clouds and flickering lights
+- 50 levels in 5 worlds: a flower garden, a sweet bakery, a dreamy night sky, frosty peaks and a sunset high above the clouds
+- New twists as you go: wind, birds, sky coins, a sliding base, bouncy clouds, flickering lights, slippery ice, a moody hook and giant squishies
 - Endless mode with rivals to overtake
 - 34 squishies to collect from blind boxes, each with its own trait, plus a toy room where you can poke them
 - Squishy Fever, three-of-a-kind bonuses, power-ups, daily gifts and missions
