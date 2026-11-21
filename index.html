@@ -115,6 +115,17 @@ h2{margin:2px 0 10px;font-size:26px;font-weight:900}
 .sk{background:#f6f2fa;border-radius:16px;padding:6px;font-weight:900;font-size:13px}.sk canvas{position:static;width:100%;height:auto;display:block}
 .sk.on{outline:3px solid var(--pink);background:#ffe3ef}.sk{min-width:0}.sk button{white-space:normal;font-size:12px;width:100%;margin-top:3px}
 #stBack{grid-column:span 2}#stGo{grid-column:span 4}.sk button.use{background:#8b7bd8}
+#title{flex-direction:column;justify-content:space-between;padding:0;pointer-events:none}#title>*{pointer-events:auto}
+#title .logo{margin-top:max(64px,9vh);text-align:center;padding:0 12px;animation:logoF 3.2s ease-in-out infinite}
+#title h1{font-size:clamp(34px,11.5vw,66px);color:#fff;letter-spacing:2px;transform:rotate(-3deg);margin:0;
+ text-shadow:0 2px 0 #ff5ca0,2px 0 0 #ff5ca0,-2px 0 0 #ff5ca0,0 -2px 0 #ff5ca0,2px 2px 0 #ff5ca0,-2px 2px 0 #ff5ca0,2px -2px 0 #ff5ca0,-2px -2px 0 #ff5ca0,0 6px 0 #e0478a,0 10px 0 #c94a7c55,0 14px 18px #0002}
+#title .logo .sub{display:inline-block;margin:14px 0 0;padding:5px 14px;border-radius:999px;background:#ffffffd9;color:#8b5a9a;font-weight:900;font-size:14px;box-shadow:0 3px 0 #0001}
+@keyframes logoF{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+#title .panel{width:min(520px,100%);border-radius:30px 30px 0 0;border-bottom:0;padding:14px 18px max(14px,env(safe-area-inset-bottom));box-shadow:0 -6px 0 #0001,0 -14px 40px #0002}
+#title .kbd{display:none}
+@media (max-height:700px) and (max-aspect-ratio:5/4){#title .logo{margin-top:58px}#title .logo .sub{display:none}}
+@media (min-aspect-ratio:5/4){#title{justify-content:center;padding:10px 16px;gap:10px}#title .logo{margin-top:0;animation:none}#title h1{font-size:clamp(28px,7vh,54px)}#title .logo .sub{display:none}
+ #title .panel{width:min(420px,100%);border-radius:28px;border-bottom:4px solid #fff;padding:14px 20px 14px;box-shadow:0 10px 0 #0002,0 20px 50px #0003}}
 @media (max-height:560px){h1{font-size:32px}.panel{padding:14px}.btn{padding:10px;font-size:19px;margin-top:8px}}
 @media (max-height:620px) and (min-aspect-ratio:4/3),(max-height:430px){
  .panel{padding:10px 14px 10px;border-radius:22px}h1{font-size:28px}h2{font-size:20px;margin:0 0 6px}
@@ -144,10 +155,9 @@ h2{margin:2px 0 10px;font-size:26px;font-weight:900}
 <button id="skBlink" class="skill" hidden></button>
 
 <div id="title" class="layer">
+  <div class="logo"><h1 data-t="name"></h1><p class="sub" data-t="tag"></p></div>
   <div class="panel">
-    <h1 data-t="name"></h1>
-    <p class="sub" data-t="tag"></p>
-    <canvas id="hero" width="360" height="190" style="position:static;width:100%;max-width:300px;height:auto"></canvas>
+    <canvas id="hero" width="360" height="190" style="display:none"></canvas>
     <p class="coins"><i></i><span id="tCoins">0</span> · <span data-t="best"></span> <b id="tBest">0</b></p>
     <button class="rankline" id="tRank"></button>
     <button id="bPlay" class="btn"><span data-t="play"></span><small id="bPlayLv"></small></button>
@@ -330,7 +340,7 @@ for(const id in ART){const a=ART[id],s=SP[id];if(!s)continue;if(a.h)s.h=a.h;a.im
 const START=['capy','dump','axo'];
 let owned=store.get('owned',START.slice()).filter(id=>SP[id]);if(!owned.length)owned=START.slice();
 let tutDone=store.get('tutDone',false),tutSeen={};
-let coins=store.get('coins',0),best=store.get('best',0),muted=store.get('mute',false),adMute=false;
+let coins=store.get('coins',0),best=store.get('best',0),muted=store.get('mute',false),adMute=false,platMute=false;
 let stars=store.get('stars',{}),shinyOwn=store.get('shiny',{}),skin=store.get('skin','pink'),tokens=store.get('tokens',0),freeAt=store.get('freeAt',0);
 let LP=store.get('lvp',[]),INV=store.get('inv',{heart:0,blink:0,wave:0,glue:0}),BASES=store.get('bases',['pink']),runsDone=0;
 const seriesOpen=id=>id!=='dream'||best>=40||LP[19]>0;
@@ -349,7 +359,7 @@ addEventListener('resize',resize);resize();
 /* ================= audio ================= */
 let AC=null;
 function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC}
-function tone(f,f2,dur,type,vol,delay){if(muted||adMute)return;const a=ac();if(!a)return;const t=a.currentTime+(delay||0);const o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+dur);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol||0.2,t+0.012);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(g).connect(a.destination);o.start(t);o.stop(t+dur+0.02)}
+function tone(f,f2,dur,type,vol,delay){if(muted||adMute||platMute)return;const a=ac();if(!a)return;const t=a.currentTime+(delay||0);const o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+dur);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol||0.2,t+0.012);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(g).connect(a.destination);o.start(t);o.stop(t+dur+0.02)}
 /* ---- background music: a small music-box loop, synthesised (no audio files) ---- */
 const MUS={g:null,noise:null,next:0,step:0,vol:0.2,
  mel:[76,0,79,0,76,72,74,76, 72,0,76,0,69,0,72,0, 77,0,81,0,77,74,76,77, 74,0,79,0,74,71,74,0,
@@ -362,7 +372,7 @@ function mHat(t,vol){const a=AC;if(!MUS.noise){const b=a.createBuffer(1,a.sample
  const n=a.createBufferSource();n.buffer=MUS.noise;const f=a.createBiquadFilter();f.type='highpass';f.frequency.value=6500;const g=a.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(0.0001,t+0.05);n.connect(f).connect(g).connect(MUS.g);n.start(t);n.stop(t+0.07)}
 function musicTick(){const a=AC;if(!a||a.state!=='running')return;
  if(!MUS.g){MUS.g=a.createGain();MUS.g.gain.value=0;MUS.g.connect(a.destination);MUS.next=a.currentTime+0.1}
- const on=!muted&&!adMute&&!userPaused;MUS.g.gain.setTargetAtTime(on?MUS.vol:0,a.currentTime,0.08);
+ const on=!muted&&!adMute&&!platMute&&!userPaused;MUS.g.gain.setTargetAtTime(on?MUS.vol:0,a.currentTime,0.08);
  if(MUS.next<a.currentTime-0.3)MUS.next=a.currentTime+0.05;
  const fever=G.fever>0&&G.state==='play';const ser=G.state==='title'?'pals':G.lvl?G.lvl.ser:bgCur||'pals';
  const tr=ser==='cafe'?5:ser==='dream'?-2:0;const spb=60/(ser==='dream'?100:112)/(fever?1.22:1)/2; // seconds per 8th note
@@ -645,8 +655,7 @@ let adActive=false;function adOn(){adActive=true;$('adBlock').hidden=false}funct
 function adBreak(cb){if(adActive)return;const pk=window.PokiSDK;if(runsDone>0&&pk&&pk.commercialBreak){let fin=false;adOn();const go=()=>{if(fin)return;fin=true;adOff();audioOn();cb()};
   try{pk.commercialBreak(()=>audioOff()).then(go,go);return}catch(e){adOff()}}cb()}
 let gpOn=false;
-function gp(on){if(on===gpOn)return;gpOn=on;try{if(window.PokiSDK)on?PokiSDK.gameplayStart():PokiSDK.gameplayStop()}catch(e){}
- try{const cg=window.CrazyGames&&CrazyGames.SDK;if(cg&&cg.game)on?cg.game.gameplayStart():cg.game.gameplayStop()}catch(e){}}
+function gp(on){if(on===gpOn)return;gpOn=on;try{if(window.PokiSDK)on?PokiSDK.gameplayStart():PokiSDK.gameplayStop()}catch(e){}}
 let paused=false,userPaused=false;
 document.addEventListener('visibilitychange',()=>{if(document.hidden){if(G.state==='play'&&!G.auto)pauseGame();paused=true;gp(false);try{AC&&AC.suspend()}catch(e){}}
  else{paused=false;last=performance.now();if(!adMute)try{AC&&AC.resume()}catch(e){};if(G.state==='play'&&!userPaused)gp(true)}});
@@ -847,7 +856,7 @@ function update(dt){
  G.hookC+=(topLocalX()-G.hookC)*Math.min(1,dt*2.5);
  G.camX+=((G.state==='title'?(CW>CH*1.25?CW*(CW<1000?0.58:0.3)/S:0):topLocalX()-240)*0.7-G.camX)*Math.min(1,dt*2);
  // camera
- const target=Math.max(0,topY()-(VH-GROUND)*0.42);
+ const target=G.state==='title'?-titleLift():Math.max(0,topY()-(VH-GROUND)*0.42);
  G.cam+=(target-G.cam)*Math.min(1,dt*3.2);
  G.shake=Math.max(0,G.shake-dt*30);
  for(const q of G.pops)q.t+=dt;G.pops=G.pops.filter(q=>q.t<1.1);
@@ -882,7 +891,7 @@ function bgKey(){if(G.state==='title')return'pals';if(G.lvl)return G.lvl.ser;con
 function drawBg(c){const k=bgKey();if(k!==bgCur){bgPrev=bgCur;bgCur=k;bgFade=bgPrev?0:1}
  if(!PIMG['bg_'+bgCur])return false;bgFade=Math.min(1,bgFade+1/60);
  const one=(key,a)=>{const im=PIMG['bg_'+key];if(!im||a<=0)return;const sc=Math.max(CW/im.width,CH*1.3/im.height),w=im.width*sc,h=im.height*sc;
-  const t=Math.min(1,G.cam/2200),y=(CH-h)*(1-t*t*(3-2*t)); // bottom of the picture at ground level, top of it high up
+  const t=Math.max(0,Math.min(1,G.cam/2200)),y=(CH-h)*(1-t*t*(3-2*t)); // bottom of the picture at ground level, top of it high up
   c.globalAlpha=a;c.drawImage(im,(CW-w)/2,y,w,h);c.globalAlpha=1};
  if(bgFade<1)one(bgPrev,1);one(bgCur,bgFade);return true}
 function render(){
@@ -1321,15 +1330,18 @@ function boxTick(dt){if($('boxL').hidden)return;const c=$('boxCv').getContext('2
 function rrc(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
 
 /* title hero */
-function heroTick(){if($('title').hidden)return;const c=$('hero').getContext('2d');c.clearRect(0,0,360,190);const ids=owned.slice(-3);while(ids.length<3)ids.unshift(START[ids.length]);
+function titleLift(){if(CW>CH*1.25||$('title').hidden)return 0;const r=$('title').querySelector('.panel').getBoundingClientRect();return Math.max(0,(CH-r.top-GROUND*S+10*S)/S)}
+function heroTick(){return;if($('title').hidden)return;const c=$('hero').getContext('2d');c.clearRect(0,0,360,190);const ids=owned.slice(-3);while(ids.length<3)ids.unshift(START[ids.length]);
  let y=182;const t=performance.now()/1000;ids.forEach((id,i)=>{const s=SP[id];const sc=0.82;const p={s,w:s.w,h:s.h,sq:Math.sin(t*3+i)*0.08,blinkT:(t+i)%3};const x=180+Math.sin(t*1.6)*6*i;drawPiece(p,x,y,Math.sin(t*1.6)*0.04*i,1,1,c,sc);y-=s.h*sc})}
 
 /* loop */
 let last=performance.now();
 function frame(now){const dt=Math.min(0.05,(now-last)/1000);last=now;if(!paused&&!userPaused){update(dt);tutTick(dt)}render();boxTick(dt);heroTick();toyTick(dt);musicTick();requestAnimationFrame(frame)}
 // title background: a little demo tower
-function demo(){['capy','dump','axo','dump','capy','axo'].forEach((id,i)=>{const p=mkPiece(id);p.shiny=false;p.lx=240+(i%2?8:-6);p.y=topY();G.tower.push(p)});G.sway=6}
+function demo(){(CW>CH*1.25?['shiba','bun','frog','pud','cat','mochi']:CH<700?['shiba','bun','frog']:['shiba','bun','frog','mochi']).forEach((id,i)=>{const p=mkPiece(id);p.shiny=false;p.lx=240+(i%2?8:-6);p.y=topY();G.tower.push(p)});G.sway=6}
 demo();applyText();showLayer('title');requestAnimationFrame(frame);
+// the platform (CrazyGames) can mute the game and tell us the player's language
+window.__sqHost={setPlatMute(v){platMute=!!v},setLang(loc){if(store.get('lang',null))return;const k=String(loc||'').slice(0,2).toLowerCase();if(TXT[k]&&k!==LANG){LANG=k;$('lang').value=k;applyText()}}};
 try{if(window.PokiSDK){PokiSDK.init().catch(()=>{}).then(()=>{try{PokiSDK.gameLoadingFinished()}catch(e){}})}}catch(e){}
 if(tutDone&&dailyReady()&&!new URLSearchParams(location.search).get('auto'))setTimeout(()=>{if(!$('title').hidden)openDaily()},700);
 // title idle: keep the demo tower swaying

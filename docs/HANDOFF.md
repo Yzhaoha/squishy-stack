@@ -66,6 +66,12 @@ CG 上没有「吊钩叠塔」直接竞品。最接近的：
 - 文案键 r_slide / r_puff / r_dark / boing。机器人（sk=0.06，每关 24 局）通过率：加机制后第 17 关 67%、20 关 50%、25 关 63%、27 关 58%，其余 80%+；第 30 关本来就只有 13–25%。忽明忽暗对机器人无效，实际难度要人玩才知道。
 - 快速模拟方法：在页面里循环调 `__sq.step(1/60)`，state==='pick' 时 `__sq.choose(0)`，到 'win'/'end' 结束（不用等真实时间）。
 
+## v6.1（11-21）：标题页重做 + CrazyGames 包
+- 标题页：logo 浮在背景上（白字粉描边、轻微浮动）；竖屏时按钮是底部抽屉，展示塔站在抽屉上沿（update 里标题状态镜头目标 = -titleLift()）；横屏仍是居中卡片、塔在左边。展示塔用新风格角色（shiba/bun/frog/…）。#hero 画布已停用。
+- `python3 tools/build_cg.py` → `dist/crazygames/index.html` + `dist/squishy-stack-crazygames.zip`（约 730KB）。适配层搬自 Pogo Post：CG SDK v3 → PokiSDK 形状接口；`window.__sqHost.setPlatMute / setLang`（平台静音、按 CG locale 选语言，玩家手选过语言则不覆盖）。假 SDK 验证过调用顺序：init → loadingStart → loadingStop → gameplayStart/Stop，法语 locale 生效。存档只用 localStorage，没接 CG Data 模块（Pogo Post 也没接，过审了）。
+- **改了 index.html 之后要重新跑 build_cg.py。**
+- 还没做：封面 3 张（1920×1080 / 800×1200 / 800×800）、预览视频、表单文字。
+
 ## 下一步
 1. 用 `art/characters/` 里的 3 张图 → 裁边、压成 WebP 内嵌进 index.html（保持单文件、不发外部请求）；没有图的角色用原来的代码画法兜底。
 2. 加压扁回弹等「捏」手感 → push 到本仓库 → 给用户 Pages 链接（加 `?v=N` 避缓存）在电脑和手机上看。
