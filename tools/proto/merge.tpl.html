@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>原型②：捏捏合成</title>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#fff0e6;font-family:system-ui,"PingFang SC","Microsoft YaHei",sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
+canvas{display:block;width:100vw;height:100vh}
+#ov{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(255,235,225,.55)}
+#ov.hide{display:none}
+.card{background:#fff;border-radius:22px;padding:22px 24px;max-width:330px;margin:16px;text-align:center;box-shadow:0 8px 30px rgba(220,110,90,.25);color:#7a3a45}
+.card h1{margin:0 0 8px;font-size:24px;color:#ff6f7f}
+.card p{margin:6px 0;font-size:15px;line-height:1.5}
+.chain{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:2px;margin:10px 0}
+.chain img{height:26px}
+.card button{margin-top:14px;border:0;border-radius:999px;background:#ff7f8f;color:#fff;font-size:18px;font-weight:700;padding:12px 30px;cursor:pointer;box-shadow:0 4px 0 #e05565}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="ov"><div class="card" id="card"></div></div>
+<script>/*MATTER*/</script>
+<script>
+/*CHARS*/
+/*PROPS*/
+const {Engine,Bodies,Body,Composite,Events,Vertices}=Matter;
+const W=400,H=600,LINE=110,DROPY=50;
+const LVS=['mochi','bun','frog','shiba','cat','bear','sloth','uni','dragon','gcapy'];
+const NAME=['麻薯','包子','青蛙','柴犬','猫咪','小熊','树懒','独角兽','小龙','巨型水豚'];
+const SZ=[50,64,80,98,116,136,156,176,198,220];
+const PTS=[1,3,6,10,15,21,28,36,45,55];
+const IMG=LVS.map(k=>{const i=new Image();i.src=CHARS[k].u;return i});
+const BG=new Image();BG.src=PROPS.bg;
+
+const cv=document.getElementById('c'),cx=cv.getContext('2d');
+let cw,ch,sc,ox,oy,dpr;
+function resize(){dpr=Math.min(2,window.devicePixelRatio||1);cw=innerWidth;ch=innerHeight;cv.width=cw*dpr;cv.height=ch*dpr;sc=Math.min(cw/(W+30),ch/(H+150));ox=(cw-W*sc)/2;oy=ch-(H+24)*sc}
+addEventListener('resize',resize);resize();
+
+let AC=null;
+function snd(f,d=.12,type='sine',v=.15){if(!AC)return;const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.setValueAtTime(f,t);o.frequency.exponentialRampToValueAtTime(f*1.5,t+d*.5);g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g).connect(AC.destination);o.start(t);o.stop(t+d)}
+
+let best=0;try{best=+localStorage.getItem('sqp_mergeBest')||0}catch(_){}
+let eng,bodies,queue,parts,state='menu',score,aimX=W/2,cur,nxt,cool,overT,t,maxLv,pop=[];
+function rnd(){return Math.random()*5|0}
+function makeBody(lv,x,y){
+  const id=LVS[lv],w=SZ[lv],C=CHARS[id];
+  const v=C.v.map(([a,b])=>({x:a*w,y:b*w}));
+  const c=Vertices.centre(v);
+  const b=Bodies.fromVertices(x+c.x,y+c.y,[v],{friction:.25,frictionStatic:.5,restitution:.15,density:.001});
+  b.lv=lv;b.w=w;b.h=w/C.ar;b.off={x:-c.x,y:-c.y};b.sq=0;b.sv=0;b.age=0;b.dead=false;
+  return b;
+}
+function start(){
+  eng=Engine.create({positionIterations:8,velocityIterations:6});
+  const o={isStatic:true,friction:.2};
+  Composite.add(eng.world,[Bodies.rectangle(-25,H/2-200,50,H+400,o),Bodies.rectangle(W+25,H/2-200,50,H+400,o),Bodies.rectangle(W/2,H+25,W+100,50,o)]);
+  bodies=[];queue=[];parts=[];score=0;cur=rnd();nxt=rnd();cool=0;overT=0;t=0;maxLv=0;
+  const hit=ev=>{
+    for(const p of ev.pairs){
+      const A=p.bodyA.parent,B=p.bodyB.parent;
+      if(ev.name==='collisionStart'){
+        const rv=Math.hypot(A.velocity.x-B.velocity.x,A.velocity.y-B.velocity.y);
+        for(const X of [A,B])if(!X.isStatic)X.sv+=Math.min(rv,8)*.03;
+      }
+      if(A.lv!==undefined&&A.lv===B.lv&&!A.dead&&!B.dead){A.dead=B.dead=true;queue.push([A,B])}
+    }
+  };
+  Events.on(eng,'collisionStart',hit);Events.on(eng,'collisionActive',hit);
+  state='play';hide();
+}
+function drop(){
+  if(state!=='play'||cool>0)return;
+  const r=SZ[cur]/2;aimX=Math.max(r,Math.min(W-r,aimX));
+  const b=makeBody(cur,aimX,DROPY);b.sq=-.1;
+  Composite.add(eng.world,b);bodies.push(b);
+  cur=nxt;nxt=rnd();cool=.55;snd(440,.08,'triangle',.07);
+}
+function merge(){
+  for(const [A,B] of queue){
+    Composite.remove(eng.world,[A,B]);
+    bodies.splice(bodies.indexOf(A),1);bodies.splice(bodies.indexOf(B),1);
+    const x=(A.position.x+B.position.x)/2,y=(A.position.y+B.position.y)/2,lv=A.lv;
+    for(let i=0;i<10;i++){const a=Math.random()*7,s=2+Math.random()*4;parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-2,l:1,c:['#ff9fc0','#ffd36b','#fff','#a8e6ff'][i%4]})}
+    if(lv>=LVS.length-1){score+=100;snd(990,.5,'triangle',.2);pop.push({x,y,txt:'+100 双水豚！',l:1.4});continue}
+    const n=lv+1,r=SZ[n]/2;
+    const b=makeBody(n,Math.max(r,Math.min(W-r,x)),y);
+    Body.setVelocity(b,{x:(A.velocity.x+B.velocity.x)/2,y:Math.min(0,(A.velocity.y+B.velocity.y)/2)});
+    b.sq=.28;b.age=2;Composite.add(eng.world,b);bodies.push(b);
+    score+=PTS[n];
+    if(n>maxLv){maxLv=n;if(n>=4)pop.push({x,y:y-40,txt:'新的：'+NAME[n]+'！',l:1.6})}
+    pop.push({x,y,txt:'+'+PTS[n],l:1});
+    snd(300*Math.pow(1.12,n),.18,'sine',.16);
+  }
+  queue.length=0;
+}
+let acc=0,last=performance.now();
+function frame(now){
+  let dt=Math.min(.05,(now-last)/1000);last=now;
+  if(state==='play'){
+    acc+=dt;let n=0;
+    while(acc>=1/60&&n<4){Engine.update(eng,1000/60);merge();acc-=1/60;n++}
+    if(n===4)acc=0;
+    step(dt);
+  }
+  draw();requestAnimationFrame(frame);
+}
+function step(dt){
+  t+=dt;cool-=dt;
+  for(const b of bodies){b.age+=dt;b.sv+=(-b.sq*160-b.sv*9)*dt;b.sq+=b.sv*dt*4;b.sq=Math.max(-.25,Math.min(.32,b.sq))}
+  for(const p of parts){p.x+=p.vx;p.y+=p.vy;p.vy+=.2;p.l-=dt*1.6}
+  parts=parts.filter(p=>p.l>0);
+  for(const p of pop){p.y-=dt*40;p.l-=dt}
+  pop=pop.filter(p=>p.l>0);
+  const over=bodies.some(b=>b.age>1.2&&b.bounds.min.y<LINE&&b.speed<3);
+  overT=over?overT+dt:Math.max(0,overT-dt*2);
+  if(overT>=2){state='end';if(score>best){best=score;try{localStorage.setItem('sqp_mergeBest',best)}catch(_){}}snd(200,.5,'sawtooth',.08);setTimeout(()=>show('end'),500)}
+}
+function drawImg(lv,x,y,ang,sq,off){
+  const img=IMG[lv],w=SZ[lv],h=w/CHARS[LVS[lv]].ar;if(!img.complete)return;
+  cx.save();cx.translate(x,y);cx.rotate(ang);if(off)cx.translate(off.x,off.y);cx.scale(1+sq*.6,1-sq);cx.drawImage(img,-w/2,-h/2,w,h);cx.restore();
+}
+function draw(){
+  cx.setTransform(dpr,0,0,dpr,0,0);
+  if(BG.complete&&BG.naturalWidth){const s=Math.max(cw/BG.naturalWidth,ch/BG.naturalHeight),bw=BG.naturalWidth*s,bh=BG.naturalHeight*s;cx.drawImage(BG,(cw-bw)/2,(ch-bh)/2,bw,bh)}
+  else{cx.fillStyle='#fff0e6';cx.fillRect(0,0,cw,ch)}
+  if(state==='menu')return;
+  cx.setTransform(dpr*sc,0,0,dpr*sc,dpr*ox,dpr*oy);
+  // jar
+  cx.fillStyle='rgba(255,255,255,.55)';rr(-8,LINE-60,W+16,H-LINE+68,26);cx.fill();
+  cx.lineWidth=6;cx.strokeStyle='rgba(255,140,160,.8)';rr(-8,LINE-60,W+16,H-LINE+68,26);cx.stroke();
+  // warning line
+  const warn=overT>0&&Math.sin(t*20)>0;
+  cx.setLineDash([12,9]);cx.lineWidth=3;cx.strokeStyle=warn?'#ff2d55':'rgba(255,110,140,.6)';
+  cx.beginPath();cx.moveTo(0,LINE);cx.lineTo(W,LINE);cx.stroke();cx.setLineDash([]);
+  // aim guide + waiting piece
+  if(state==='play'){
+    const r=SZ[cur]/2,ax=Math.max(r,Math.min(W-r,aimX));
+    cx.strokeStyle='rgba(255,255,255,.8)';cx.lineWidth=2;cx.setLineDash([4,8]);cx.beginPath();cx.moveTo(ax,DROPY);cx.lineTo(ax,H);cx.stroke();cx.setLineDash([]);
+    if(cool<=0)drawImg(cur,ax,DROPY,0,Math.sin(t*8)*.03);
+  }
+  for(const b of bodies)drawImg(b.lv,b.position.x,b.position.y,b.angle,b.sq,b.off);
+  for(const p of parts){cx.globalAlpha=Math.max(0,p.l);cx.fillStyle=p.c;cx.beginPath();cx.arc(p.x,p.y,4,0,7);cx.fill()}
+  cx.globalAlpha=1;cx.textAlign='center';
+  for(const p of pop){cx.globalAlpha=Math.min(1,p.l*2);cx.font='bold 22px system-ui,sans-serif';cx.lineWidth=5;cx.strokeStyle='#fff';cx.strokeText(p.txt,p.x,p.y);cx.fillStyle='#ff5c7a';cx.fillText(p.txt,p.x,p.y)}
+  cx.globalAlpha=1;
+  // HUD above jar
+  cx.font='bold 26px system-ui,sans-serif';cx.textAlign='left';cx.lineWidth=6;cx.strokeStyle='#fff';
+  cx.strokeText(score,4,-6);cx.fillStyle='#e0506a';cx.fillText(score,4,-6);
+  cx.font='bold 14px system-ui,sans-serif';cx.fillStyle='#b0606f';cx.fillText('最高 '+best,4,-36);
+  cx.textAlign='right';cx.fillText('下一个',W-50,-30);
+  const nw=SZ[nxt];cx.save();cx.translate(W-22,-24);const k=Math.min(1,40/nw);cx.scale(k,k);drawImg(nxt,0,0,0,0);cx.restore();
+}
+function rr(x,y,w,h,r){cx.beginPath();cx.moveTo(x+r,y);cx.arcTo(x+w,y,x+w,y+h,r);cx.arcTo(x+w,y+h,x,y+h,r);cx.arcTo(x,y+h,x,y,r);cx.arcTo(x,y,x+w,y,r);cx.closePath()}
+
+const ov=document.getElementById('ov'),card=document.getElementById('card');
+function hide(){ov.classList.add('hide')}
+function chain(){return '<div class="chain">'+LVS.map((k,i)=>'<img src="'+CHARS[k].u+'" style="height:'+(16+i*2.4)+'px">').join('')+'</div>'}
+function show(k){
+  ov.classList.remove('hide');
+  if(k==='menu')card.innerHTML='<h1>原型②：捏捏合成</h1><p>左右移动瞄准，松手放下。</p><p>两只<b>一样的</b>碰到一起会合成下一级更大的：</p>'+chain()+'<p>东西堆过虚线 2 秒就输了。看你能合到第几级！</p><button id="b">开始</button>';
+  else card.innerHTML='<h1>满了！</h1><p>得分 <b>'+score+'</b>　最高 <b>'+best+'</b></p><p>最大合到：'+NAME[maxLv]+'</p>'+chain()+'<button id="b">再来一局</button>';
+  document.getElementById('b').onclick=e=>{e.stopPropagation();if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(_){}}start()};
+}
+function toX(e){return (e.clientX-ox)/sc}
+let down=false;
+cv.addEventListener('pointerdown',e=>{e.preventDefault();down=true;aimX=toX(e)});
+cv.addEventListener('pointermove',e=>{if(down||e.pointerType==='mouse')aimX=toX(e)});
+addEventListener('pointerup',e=>{if(down){down=false;aimX=toX(e);drop()}});
+addEventListener('keydown',e=>{if(e.code==='ArrowLeft')aimX-=24;else if(e.code==='ArrowRight')aimX+=24;else if(e.code==='Space'){e.preventDefault();drop()}});
+show('menu');
+window.__m={get state(){return state},drop,setAim:x=>aimX=x,get bodies(){return bodies},get score(){return score},get maxLv(){return maxLv},get cool(){return cool},start,step:()=>{Engine.update(eng,1000/60);merge();step(1/60)}};
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

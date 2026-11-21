@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>原型①：物理叠塔</title>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#ffe9f1;font-family:system-ui,"PingFang SC","Microsoft YaHei",sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
+canvas{display:block;width:100vw;height:100vh}
+#ov{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(255,230,240,.55)}
+#ov.hide{display:none}
+.card{background:#fff;border-radius:22px;padding:22px 24px;max-width:320px;margin:16px;text-align:center;box-shadow:0 8px 30px rgba(220,90,140,.25);color:#7a3a55}
+.card h1{margin:0 0 8px;font-size:24px;color:#ff5c93}
+.card p{margin:6px 0;font-size:15px;line-height:1.5}
+.card button{margin-top:14px;border:0;border-radius:999px;background:#ff6fa1;color:#fff;font-size:18px;font-weight:700;padding:12px 30px;cursor:pointer;box-shadow:0 4px 0 #e0457c}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="ov"><div class="card" id="card"></div></div>
+<script>/*MATTER*/</script>
+<script>
+/*CHARS*/
+/*PROPS*/
+const {Engine,Bodies,Body,Composite,Events,Vertices}=Matter;
+const W=420,VH=760;
+const LV=[
+  {base:300,goal:230,amp:110,per:2.5},
+  {base:230,goal:300,amp:125,per:2.2},
+  {base:180,goal:340,amp:135,per:1.95},
+];
+const SIZE={shiba:104,bun:96,toast:98,boba:74,mush:88,cro:122,shark:134,pud:88};
+const IDS=Object.keys(SIZE);
+let ANGD=.8,BOXK=.5,SUB=3;
+function tick(){for(let i=0;i<SUB;i++)Engine.update(eng,1000/60/SUB)}
+const IMG={};
+for(const k in CHARS){IMG[k]=new Image();IMG[k].src=CHARS[k].u}
+const BG=new Image();BG.src=PROPS.bg;
+const BASE=new Image();BASE.src=PROPS.base;
+
+const cv=document.getElementById('c'),cx=cv.getContext('2d');
+let cw,ch,sc,ox,oy,dpr;
+function resize(){dpr=Math.min(2,window.devicePixelRatio||1);cw=innerWidth;ch=innerHeight;cv.width=cw*dpr;cv.height=ch*dpr;sc=Math.min(cw/W,ch/VH);ox=(cw-W*sc)/2;oy=(ch-VH*sc)/2}
+addEventListener('resize',resize);resize();
+
+// ---- sound ----
+let AC=null;
+function snd(f,d=.12,type='sine',v=.15){if(!AC)return;const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.setValueAtTime(f,t);o.frequency.exponentialRampToValueAtTime(f*.6,t+d);g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g).connect(AC.destination);o.start(t);o.stop(t+d)}
+
+// ---- game ----
+let eng,base,bodies,falling,lvI=0,misses,state='menu',t=0,camY=-600,cool=0,holdT=0,nextId,lastIds=[],msg='',msgT=0,shake=0;
+function pick(){let id;do{id=IDS[Math.random()*IDS.length|0]}while(lastIds.length>=2&&lastIds[0]===id&&lastIds[1]===id);lastIds.unshift(id);lastIds.length=2;return id}
+function makeBody(id,x,y){
+  const w=SIZE[id],C=CHARS[id];
+  let v=C.v.map(([a,b])=>({x:a*w,y:b*w}));
+  // pull the outline 35% toward its bounding box: looks the same, stacks less slippery
+  const xs=v.map(p=>p.x),ys=v.map(p=>p.y),x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+  const mx=(x0+x1)/2,my=(y0+y1)/2,hw=(x1-x0)/2,hh=(y1-y0)/2;
+  v=v.map(p=>{const dx=(p.x-mx)/hw,dy=(p.y-my)/hh,k=1/Math.max(Math.abs(dx),Math.abs(dy),1e-6);
+    return {x:p.x+BOXK*(mx+dx*k*hw-p.x),y:p.y+BOXK*(my+dy*k*hh-p.y)}});
+  const c=Vertices.centre(v);
+  const b=Bodies.fromVertices(x+c.x,y+c.y,[v],{friction:1,frictionStatic:2,restitution:0,density:.0016,frictionAir:.02,sleepThreshold:40});
+  b.cid=id;b.w=w;b.h=w/C.ar;b.off={x:-c.x,y:-c.y};b.sq=0;b.sv=0;b.landed=false;
+  return b;
+}
+function startLevel(i){
+  lvI=i;const L=LV[i];
+  eng=Engine.create({enableSleeping:true,positionIterations:10,velocityIterations:8});
+  base=Bodies.rectangle(W/2,16,L.base,32,{isStatic:true,friction:1,chamfer:{radius:6}});
+  Composite.add(eng.world,base);
+  bodies=[];falling=null;misses=0;cool=.4;holdT=0;camY=-600;t=0;nextId=pick();msg='';
+  Events.on(eng,'collisionStart',ev=>{
+    for(const p of ev.pairs){
+      const A=p.bodyA.parent,B=p.bodyB.parent;
+      const rv=Math.hypot(A.velocity.x-B.velocity.x,A.velocity.y-B.velocity.y);
+      for(const [X,Y] of [[A,B],[B,A]]){
+        if(X.isStatic)continue;
+        if(Y===base||Y.landed)X.landed=true;
+        X.sv+=Math.min(rv,9)*.035;
+      }
+      if(rv>1.5)snd(260+Math.random()*120,.1,'sine',Math.min(.2,rv*.03));
+    }
+  });
+  state='play';hide();
+}
+function drop(){
+  if(state!=='play'||falling||cool>0)return;
+  const L=LV[lvI],ph=2*Math.PI*t/L.per;
+  const hx=W/2+L.amp*Math.sin(ph),vx=L.amp*2*Math.PI/L.per*Math.cos(ph);
+  const id=nextId,hy=camY+120,h=SIZE[id]/CHARS[id].ar;
+  const b=makeBody(id,hx,hy+16+h/2);
+  Body.setVelocity(b,{x:0,y:0});
+  b.sq=-.12;
+  Composite.add(eng.world,b);bodies.push(b);falling=b;nextId=pick();
+  snd(520,.08,'triangle',.08);
+}
+function towerTop(){let m=0;for(const b of bodies)if(b.landed&&b!==falling)m=Math.min(m,b.bounds.min.y);return m}
+
+let acc=0,last=performance.now();
+function frame(now){
+  let dt=Math.min(.05,(now-last)/1000);last=now;
+  if(state==='play'||state==='win'||state==='lose'){
+    acc+=dt;let n=0;
+    while(acc>=1/60&&n<4){tick();acc-=1/60;n++}
+    if(n===4)acc=0;
+    step(dt);
+  }
+  draw();
+  requestAnimationFrame(frame);
+}
+function step(dt){
+  t+=dt;cool-=dt;msgT-=dt;shake*=.9;
+  for(const b of bodies){b.sv+=(-b.sq*160-b.sv*9)*dt;b.sq+=b.sv*dt*4;b.sq=Math.max(-.25,Math.min(.3,b.sq))}
+  for(const b of bodies)if(b.landed&&!b.isSleeping)Body.setAngularVelocity(b,b.angularVelocity*ANGD);
+  if(falling&&falling.landed){falling=null;cool=.35}
+  for(let i=bodies.length-1;i>=0;i--){
+    const b=bodies[i];
+    if(b.position.y>420){
+      Composite.remove(eng.world,b);bodies.splice(i,1);
+      if(b===falling){falling=null;cool=.35}
+      if(state==='play'){misses++;shake=8;snd(160,.35,'sawtooth',.08);msg='掉了 '+misses+'/3';msgT=1.4;
+        if(misses>=3){state='lose';setTimeout(()=>show('lose'),700)}}
+    }
+  }
+  const top=towerTop(),L=LV[lvI];
+  camY+=(Math.min(-600,top-300)-camY)*Math.min(1,dt*3);
+  if(state==='play'){
+    const still=bodies.every(b=>!b.landed||b.isSleeping||(b.speed<.3&&Math.abs(b.angularVelocity)<.02));
+    if(top<=-L.goal&&!falling&&still)holdT+=dt;else holdT=Math.max(0,holdT-dt*2);
+    if(holdT>=1.2){state='win';snd(660,.2,'triangle',.15);setTimeout(()=>snd(880,.3,'triangle',.15),150);setTimeout(()=>show('win'),600)}
+  }
+}
+
+// ---- drawing ----
+function drawChar(b){
+  const img=IMG[b.cid];if(!img.complete)return;
+  cx.save();cx.translate(b.position.x,b.position.y);cx.rotate(b.angle);cx.translate(b.off.x,b.off.y);
+  const s=b.sq;cx.scale(1+s*.6,1-s);
+  cx.drawImage(img,-b.w/2,-b.h/2,b.w,b.h);
+  cx.restore();
+}
+function draw(){
+  cx.setTransform(dpr,0,0,dpr,0,0);
+  // background, cover, slight parallax
+  if(BG.complete&&BG.naturalWidth){
+    const s=Math.max(cw/BG.naturalWidth,ch*1.25/BG.naturalHeight),bw=BG.naturalWidth*s,bh=BG.naturalHeight*s;
+    const par=Math.max(0,Math.min(1,(-camY-600)/900));
+    cx.drawImage(BG,(cw-bw)/2,ch-bh+par*(bh-ch),bw,bh);
+  }else{cx.fillStyle='#ffe9f1';cx.fillRect(0,0,cw,ch)}
+  if(state==='menu')return;
+  const L=LV[lvI];
+  const sx=(Math.random()-.5)*shake,sy=(Math.random()-.5)*shake;
+  cx.setTransform(dpr*sc,0,0,dpr*sc,dpr*(ox+sx),dpr*(oy+sy));
+  cx.translate(0,-camY);
+  // goal line
+  const gy=-L.goal,ok=holdT>0;
+  cx.setLineDash([14,10]);cx.lineWidth=4;cx.strokeStyle=ok?'#3fcf8e':'#ff6fa1';
+  cx.beginPath();cx.moveTo(-200,gy);cx.lineTo(W+200,gy);cx.stroke();cx.setLineDash([]);
+  cx.fillStyle=ok?'#3fcf8e':'#ff6fa1';cx.font='bold 18px system-ui,sans-serif';cx.textAlign='left';
+  cx.fillText(ok?'稳住！':'目标高度',12,gy-10);
+  // base
+  if(BASE.complete){const bw=L.base*1.12,bh=bw*BASE.naturalHeight/BASE.naturalWidth;cx.drawImage(BASE,W/2-bw/2,-6,bw,bh)}
+  else{cx.fillStyle='#ffb3cc';cx.fillRect(W/2-L.base/2,0,L.base,32)}
+  for(const b of bodies)drawChar(b);
+  // hook + waiting piece
+  if(state==='play'){
+    const hx=W/2+L.amp*Math.sin(2*Math.PI*t/L.per),hy=camY+120;
+    cx.strokeStyle='#c98aa5';cx.lineWidth=3;cx.beginPath();cx.moveTo(W/2,camY-40);cx.lineTo(hx,hy);cx.stroke();
+    cx.fillStyle='#ff8fb5';cx.beginPath();cx.arc(hx,hy,8,0,7);cx.fill();
+    if(!falling&&cool<=0){
+      const id=nextId,w=SIZE[id],h=w/CHARS[id].ar,img=IMG[id];
+      const wob=Math.sin(t*9)*.03;
+      cx.save();cx.translate(hx,hy+16+h/2);cx.scale(1-wob,1+wob);if(img.complete)cx.drawImage(img,-w/2,-h/2,w,h);cx.restore();
+    }
+  }
+  // HUD (screen space)
+  cx.setTransform(dpr,0,0,dpr,0,0);
+  cx.textAlign='center';cx.font='bold 20px system-ui,sans-serif';
+  const hud='第 '+(lvI+1)+'/3 关   '+'❤'.repeat(3-misses)+'🤍'.repeat(misses);
+  cx.lineWidth=5;cx.strokeStyle='#fff';cx.strokeText(hud,cw/2,34);cx.fillStyle='#d94c80';cx.fillText(hud,cw/2,34);
+  if(holdT>0&&state==='play'){
+    cx.beginPath();cx.lineWidth=8;cx.strokeStyle='#3fcf8e';cx.arc(cw/2,80,22,-Math.PI/2,-Math.PI/2+2*Math.PI*holdT/1.2);cx.stroke();
+  }
+  if(msgT>0){cx.font='bold 26px system-ui,sans-serif';cx.lineWidth=6;cx.strokeText(msg,cw/2,ch*.42);cx.fillStyle='#ff5c93';cx.fillText(msg,cw/2,ch*.42)}
+}
+
+// ---- UI ----
+const ov=document.getElementById('ov'),card=document.getElementById('card');
+function hide(){ov.classList.add('hide')}
+function show(k){
+  ov.classList.remove('hide');
+  if(k==='menu')card.innerHTML='<h1>原型①：物理叠塔</h1><p>点屏幕（或空格）放下吊钩上的捏捏。</p><p>它们有真重量：放歪会滑，放在圆顶上会滚，会连带倒。</p><p>塔顶够到<b>目标线</b>并稳住 1 秒多就过关，掉下去 3 只算输。一共 3 关，底座越来越窄。</p><button id="b">开始</button>';
+  else if(k==='win')card.innerHTML=lvI<2?'<h1>过关！</h1><p>第 '+(lvI+1)+' 关完成，下一关底座更窄、目标更高。</p><button id="b">下一关</button>':'<h1>全部通关！</h1><p>3 关都过了。好不好玩，跟我说说感觉～</p><button id="b">再玩一遍</button>';
+  else card.innerHTML='<h1>塔倒了…</h1><p>掉了 3 只。</p><button id="b">重来这一关</button>';
+  document.getElementById('b').onclick=e=>{e.stopPropagation();
+    if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(_){}}
+    if(k==='menu')startLevel(0);else if(k==='win')startLevel(lvI<2?lvI+1:0);else startLevel(lvI);
+  };
+}
+cv.addEventListener('pointerdown',e=>{e.preventDefault();drop()});
+addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();drop()}});
+show('menu');
+window.__p={set BOXK(k){BOXK=k},set ANGD(k){ANGD=k},get state(){return state},drop,get bodies(){return bodies},get misses(){return misses},step:(s)=>{tick();step(1/60)},set SUB(k){SUB=k},startLevel,towerTop,get t(){return t},get falling(){return falling},get cool(){return cool},LV,SIZE};
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
