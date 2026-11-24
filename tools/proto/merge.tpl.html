@@ -229,7 +229,7 @@ function drawRainbow(x,y,ang,sq,k){
 function drawImg(lv,x,y,ang,sq,off,k){
   if(lv===RB)return drawRainbow(x,y,ang,sq,k);
   k=k||1;const img=IMG[lv],w=SZ[lv]*k,h=w/CHARS[LVS[lv]].ar;if(!img.complete)return;
-  cx.save();cx.translate(x,y);cx.rotate(ang);if(off)cx.translate(off.x*k,off.y*k);cx.scale(1+sq*.6,1-sq);cx.drawImage(img,-w/2,-h/2,w,h);cx.restore();
+  cx.save();cx.translate(x,y);cx.rotate(ang);if(off)cx.translate(off.x*k,off.y*k);cx.scale(1+sq*.72,1-sq);cx.shadowColor='rgba(95,43,79,.25)';cx.shadowBlur=5;cx.shadowOffsetX=2;cx.shadowOffsetY=4;cx.drawImage(img,-w/2,-h/2,w,h);cx.restore();
 }
 function drawIce(b){
   cx.save();cx.translate(b.position.x,b.position.y);cx.rotate(b.angle);cx.translate(b.off.x,b.off.y);
@@ -246,12 +246,25 @@ function draw(){
   cx.setTransform(dpr,0,0,dpr,0,0);
   if(BG.complete&&BG.naturalWidth){const s=Math.max(cw/BG.naturalWidth,ch/BG.naturalHeight),bw=BG.naturalWidth*s,bh=BG.naturalHeight*s;cx.drawImage(BG,(cw-bw)/2,(ch-bh)/2,bw,bh)}
   else{cx.fillStyle='#fff0e6';cx.fillRect(0,0,cw,ch)}
+  cx.fillStyle='rgba(255,244,249,.58)';cx.fillRect(0,0,cw,ch);
   if(state==='menu')return;
   const shx=(Math.random()-.5)*shake,shy=(Math.random()-.5)*shake;
   cx.setTransform(dpr*sc,0,0,dpr*sc,dpr*(ox+shx*sc),dpr*(oy+shy*sc));
-  // jar
-  cx.fillStyle=sqMode?'rgba(255,240,248,.8)':'rgba(255,255,255,.55)';rr(-8,LINE-60,W+16,H-LINE+68,26);cx.fill();
-  cx.lineWidth=sqMode?8:6;cx.strokeStyle=sqMode?'#ff5c93':'rgba(255,140,160,.8)';rr(-8,LINE-60,W+16,H-LINE+68,26);cx.stroke();
+  // Recessed toy box: rear shell, inner walls and floor; physics stays in screen space.
+  const boxY=LINE-60,boxH=H-boxY;
+  cx.save();cx.shadowColor='rgba(102,49,83,.22)';cx.shadowBlur=22;cx.shadowOffsetY=12;
+  cx.fillStyle='#d98cae';rr(-12,boxY-4,W+24,boxH+22,24);cx.fill();cx.restore();
+  const well=cx.createLinearGradient(0,boxY,0,H);
+  well.addColorStop(0,'#fce9ef');well.addColorStop(.65,'#f8dce7');well.addColorStop(1,'#e7b8ce');
+  cx.fillStyle=well;rr(0,boxY+5,W,boxH,18);cx.fill();
+  const wall=cx.createLinearGradient(0,0,24,0);
+  wall.addColorStop(0,'rgba(139,67,108,.24)');wall.addColorStop(1,'rgba(139,67,108,0)');
+  cx.fillStyle=wall;cx.fillRect(0,boxY+22,24,boxH-22);
+  cx.save();cx.translate(W,0);cx.scale(-1,1);cx.fillRect(0,boxY+22,24,boxH-22);cx.restore();
+  const floor=cx.createLinearGradient(0,H-24,0,H+8);
+  floor.addColorStop(0,'rgba(172,91,129,0)');floor.addColorStop(1,'rgba(139,67,108,.28)');
+  cx.fillStyle=floor;cx.fillRect(0,H-24,W,32);
+  cx.strokeStyle=sqMode?'#ff5c93':'#fff4f8';cx.lineWidth=5;rr(-9,boxY,W+18,boxH+12,22);cx.stroke();
   const warn=overT>0&&Math.sin(t*20)>0;
   cx.setLineDash([12,9]);cx.lineWidth=3;cx.strokeStyle=warn?'#ff2d55':'rgba(255,110,140,.6)';
   cx.beginPath();cx.moveTo(0,LINE);cx.lineTo(W,LINE);cx.stroke();cx.setLineDash([]);
@@ -261,6 +274,11 @@ function draw(){
     if(cool<=0&&left()>0)drawImg(cur,ax,DROPY,0,Math.sin(t*8)*.03);
   }
   for(const b of bodies){drawImg(b.lv,b.position.x,b.position.y,b.angle,b.sq,b.off,b.k);if(b.ice)drawIce(b)}
+  // Front lip occludes the very bottom, anchoring the toys inside the box.
+  const lip=cx.createLinearGradient(0,H-2,0,H+17);
+  lip.addColorStop(0,'#fff5fa');lip.addColorStop(.3,'#ffcee1');lip.addColorStop(1,'#d98cae');
+  cx.fillStyle=lip;rr(-10,H-2,W+20,20,9);cx.fill();
+  cx.strokeStyle='rgba(255,255,255,.9)';cx.lineWidth=2;cx.beginPath();cx.moveTo(2,H);cx.lineTo(W-2,H);cx.stroke();
   if(sqMode){
     const pulse=.5+.5*Math.sin(t*8);
     for(const b of bodies){cx.strokeStyle='rgba(255,92,147,'+(.25+pulse*.35)+')';cx.lineWidth=3;cx.beginPath();cx.arc(b.position.x,b.position.y,Math.min(b.w,b.h)*.55,0,7);cx.stroke()}
