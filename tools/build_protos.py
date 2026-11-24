@@ -17,7 +17,7 @@ ART = os.path.join(ROOT, 'art', 'characters')
 PROTO = os.path.join(ROOT, 'tools', 'proto')
 
 PHYS = ['shiba', 'bun', 'toast', 'boba', 'mush', 'cro', 'shark', 'pud']
-MERGE = ['mochi', 'bun', 'frog', 'shiba', 'cat', 'bear', 'sloth', 'uni', 'dragon', 'gcapy']
+MERGE = ['mochi', 'bun', 'frog', 'berry', 'shiba', 'jelly', 'peng', 'bear', 'uni', 'gcapy']
 
 
 def webp(im, w, q=80):

@@ -26,9 +26,9 @@ canvas{display:block;width:100vw;height:100vh}
 /*PROPS*/
 const {Engine,Bodies,Body,Composite,Events,Vertices}=Matter;
 const W=400,H=600,LINE=110,DROPY=50;
-const LVS=['mochi','bun','frog','shiba','cat','bear','sloth','uni','dragon','gcapy'];
-const NAME=['麻薯','包子','青蛙','柴犬','猫咪','小熊','树懒','独角兽','小龙','巨型水豚'];
-const SZ=[50,64,80,98,116,136,156,176,198,220];
+const LVS=['mochi','bun','frog','berry','shiba','jelly','peng','bear','uni','gcapy'];
+const NAME=['麻薯','包子','青蛙','草莓','柴犬','果冻','企鹅','小熊','独角兽','巨型水豚'];
+const SZ=[46,58,74,92,114,138,162,188,214,240];
 const PTS=[1,3,6,10,15,21,28,36,45,55];
 const IMG=LVS.map(k=>{const i=new Image();i.src=CHARS[k].u;return i});
 const BG=new Image();BG.src=PROPS.bg;
@@ -108,7 +108,8 @@ function frame(now){
 }
 function step(dt){
   t+=dt;cool-=dt;
-  for(const b of bodies){b.age+=dt;b.sv+=(-b.sq*160-b.sv*9)*dt;b.sq+=b.sv*dt*4;b.sq=Math.max(-.25,Math.min(.32,b.sq))}
+  for(const b of bodies){let a=b.angle%(2*Math.PI);if(a>Math.PI)a-=2*Math.PI;if(a<-Math.PI)a+=2*Math.PI;
+    Body.setAngularVelocity(b,b.angularVelocity*.9-a*.012);b.age+=dt;b.sv+=(-b.sq*160-b.sv*9)*dt;b.sq+=b.sv*dt*4;b.sq=Math.max(-.25,Math.min(.32,b.sq))}
   for(const p of parts){p.x+=p.vx;p.y+=p.vy;p.vy+=.2;p.l-=dt*1.6}
   parts=parts.filter(p=>p.l>0);
   for(const p of pop){p.y-=dt*40;p.l-=dt}
@@ -148,7 +149,7 @@ function draw(){
   // HUD above jar
   cx.font='bold 26px system-ui,sans-serif';cx.textAlign='left';cx.lineWidth=6;cx.strokeStyle='#fff';
   cx.strokeText(score,4,-6);cx.fillStyle='#e0506a';cx.fillText(score,4,-6);
-  cx.font='bold 14px system-ui,sans-serif';cx.fillStyle='#b0606f';cx.fillText('最高 '+best,4,-36);
+  cx.font='bold 14px system-ui,sans-serif';cx.fillStyle='#b0606f';cx.fillText('最高 '+Math.max(best,score),4,-36);
   cx.textAlign='right';cx.fillText('下一个',W-50,-30);
   const nw=SZ[nxt];cx.save();cx.translate(W-22,-24);const k=Math.min(1,40/nw);cx.scale(k,k);drawImg(nxt,0,0,0,0);cx.restore();
 }
