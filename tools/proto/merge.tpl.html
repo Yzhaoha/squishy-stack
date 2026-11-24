@@ -43,7 +43,7 @@ const BG=new Image();BG.src=PROPS.bg;
 
 const LEVELS=[
   {name:'第 1 关',sub:'合出一只柴犬',goal:{make:4},pool:4,sq:3,
-   intro:'<p>左右移动瞄准，松手放下。两只<b>一样的</b>碰到会合成更大的一只。</p><p><b>新本领「捏一下」</b>：罐子里卡住了，或者两只同款差一点没碰上？点罐子上方的 <b>✊ 捏一下</b>，再点一只捏捏——它会缩一下再弹开，把旁边的挤开。每合成 5 次补 1 次。</p>'},
+   intro:'<p>左右移动瞄准，松手放下。两只<b>一样的</b>碰到会合成更大的一只。</p><p><b>新本领「捏一下」</b>：罐子里卡住了，或者两只同款差一点没碰上？点罐子上方的 <b>✊ 捏一下</b>，再点一只捏捏——它会「噗」地缩一下把周围炸开，然后<b>把附近同款的吸过来</b>。每合成 5 次补 1 次。</p>'},
   {name:'第 2 关 · 彩虹捏捏',sub:'合出一只小熊',goal:{make:7},pool:5,sq:3,rainbow:6,
    intro:'<p>每隔几只会来一颗 <b>🌈 彩虹捏捏</b>：它碰到谁就和谁合成，直接把那只升一级。</p><p>把它丢在最想升级的那只上面！</p>'},
   {name:'第 3 关 · 冰冻捏捏',sub:'25 只以内，把 4 只冰冻的全部解冻',goal:{thaw:1},pool:4,sq:4,limit:25,
@@ -66,6 +66,7 @@ function save(k,v){try{localStorage.setItem('sqp_'+k,JSON.stringify(v))}catch(_)
 let best=load('mergeBest',0),done=load('mergeDone',[]);
 
 let eng,bodies,queue,parts,state='menu',score,aimX=W/2,cur,nxt,cool,overT,t,maxLv,pop=[];
+let mag=null,shake=0,rings=[];
 let L,li=0,drops,sqN,sqMeter,sqMode=false,iceLeft,hint='',hintT=0;
 
 function pw(lv){return lv===RB?RB_SZ:SZ[lv]}
@@ -91,7 +92,7 @@ function start(i){
   const o={isStatic:true,friction:.2};
   Composite.add(eng.world,[Bodies.rectangle(-25,H/2-200,50,H+400,o),Bodies.rectangle(W+25,H/2-200,50,H+400,o),Bodies.rectangle(W/2,H+25,W+100,50,o)]);
   bodies=[];queue=[];parts=[];pop=[];score=0;drops=0;cool=0;overT=0;t=0;maxLv=0;
-  sqN=L.sq;sqMeter=0;outT=0;sqMode=false;iceLeft=0;hint='';hintT=0;
+  sqN=L.sq;sqMeter=0;outT=0;mag=null;shake=0;rings=[];sqMode=false;iceLeft=0;hint='';hintT=0;
   cur=rnd();nxt=rnd();
   for(const [x,lv] of (L.ice||[])){
     const b=makeBody(lv,x,H-SZ[lv]/CHARS[LVS[lv]].ar/2-2);
@@ -133,14 +134,18 @@ function squeeze(b){
   b.sq=.4;b.sv=-1.5;
   snd(180,.22,'sine',.2,2.2);
   if(b.ice){chipIce(b);return}
-  Body.scale(b,.75,.75);b.k=.75;
-  Body.setVelocity(b,{x:b.velocity.x,y:b.velocity.y-2.5});
+  Body.scale(b,.6,.6);b.k=.6;
+  Body.setVelocity(b,{x:b.velocity.x*.3,y:-5});
+  // blast: shove everything around it (same kind is pulled in instead, below)
   for(const o of bodies){
-    if(o===b||o.isStatic)continue;
-    const dx=o.position.x-b.position.x,dy=o.position.y-b.position.y,d=Math.hypot(dx,dy)||1,R=(b.w+o.w)/2*1.3;
-    if(d<R){const f=(1-d/R)*6+1;Body.setVelocity(o,{x:o.velocity.x+dx/d*f,y:o.velocity.y+dy/d*f-1});o.sv+=.12}
+    if(o===b||o.isStatic||(o.lv===b.lv&&!b.rb))continue;
+    const dx=o.position.x-b.position.x,dy=o.position.y-b.position.y,d=Math.hypot(dx,dy)||1,R=(b.w+o.w)/2*1.7;
+    if(d<R){const f=(1-d/R)*11+2.5;Body.setVelocity(o,{x:o.velocity.x+dx/d*f,y:o.velocity.y+dy/d*f-2.5});o.sv+=.2}
   }
-  burst(b.position.x,b.position.y,6,['#ffc2d6','#fff']);
+  mag={b,t:1.1};shake=9;
+  burst(b.position.x,b.position.y,16,['#ffc2d6','#fff','#ff8fb1']);
+  rings.push({x:b.position.x,y:b.position.y,r:b.w*.4,l:1});
+  snd(90,.35,'sine',.25,3);
 }
 function win(){
   if(state!=='play')return;state='win';
@@ -184,8 +189,17 @@ function frame(now){
 }
 function step(dt){
   t+=dt;cool-=dt;hintT-=dt;
+  shake*=Math.pow(.02,dt);
+  for(const r of rings){r.r+=dt*500;r.l-=dt*2.2}rings=rings.filter(r=>r.l>0);
+  if(mag){mag.t-=dt;const m=mag.b;
+    if(mag.t<=0||m.dead||!bodies.includes(m))mag=null;
+    else for(const o of bodies){
+      if(o===m||o.isStatic||o.dead||o.ice||(!m.rb&&o.lv!==m.lv))continue;
+      const dx=m.position.x-o.position.x,dy=m.position.y-o.position.y,d=Math.hypot(dx,dy)||1;
+      if(d<300){const f=m.rb?.5:.9;Body.setVelocity(o,{x:o.velocity.x*.92+dx/d*f,y:o.velocity.y*.92+dy/d*f});Body.setVelocity(m,{x:m.velocity.x-dx/d*f*.3,y:m.velocity.y-dy/d*f*.3})}
+    }}
   for(const b of bodies){
-    if(b.k<1){const nk=Math.min(1,b.k+dt*1.1);Body.scale(b,nk/b.k,nk/b.k);b.k=nk}
+    if(b.k<1){const nk=Math.min(1,b.k+dt*1.4);Body.scale(b,nk/b.k,nk/b.k);b.k=nk}
     if(!b.isStatic&&!b.rb){let a=b.angle%(2*Math.PI);if(a>Math.PI)a-=2*Math.PI;if(a<-Math.PI)a+=2*Math.PI;Body.setAngularVelocity(b,b.angularVelocity*.9-a*.012)}
     b.age+=dt;b.sv+=(-b.sq*160-b.sv*9)*dt;b.sq+=b.sv*dt*4;b.sq=Math.max(-.25,Math.min(.42,b.sq))}
   for(const p of parts){p.x+=p.vx;p.y+=p.vy;p.vy+=.2;p.l-=dt*1.6}
@@ -233,7 +247,8 @@ function draw(){
   if(BG.complete&&BG.naturalWidth){const s=Math.max(cw/BG.naturalWidth,ch/BG.naturalHeight),bw=BG.naturalWidth*s,bh=BG.naturalHeight*s;cx.drawImage(BG,(cw-bw)/2,(ch-bh)/2,bw,bh)}
   else{cx.fillStyle='#fff0e6';cx.fillRect(0,0,cw,ch)}
   if(state==='menu')return;
-  cx.setTransform(dpr*sc,0,0,dpr*sc,dpr*ox,dpr*oy);
+  const shx=(Math.random()-.5)*shake,shy=(Math.random()-.5)*shake;
+  cx.setTransform(dpr*sc,0,0,dpr*sc,dpr*(ox+shx*sc),dpr*(oy+shy*sc));
   // jar
   cx.fillStyle=sqMode?'rgba(255,240,248,.8)':'rgba(255,255,255,.55)';rr(-8,LINE-60,W+16,H-LINE+68,26);cx.fill();
   cx.lineWidth=sqMode?8:6;cx.strokeStyle=sqMode?'#ff5c93':'rgba(255,140,160,.8)';rr(-8,LINE-60,W+16,H-LINE+68,26);cx.stroke();
@@ -250,6 +265,12 @@ function draw(){
     const pulse=.5+.5*Math.sin(t*8);
     for(const b of bodies){cx.strokeStyle='rgba(255,92,147,'+(.25+pulse*.35)+')';cx.lineWidth=3;cx.beginPath();cx.arc(b.position.x,b.position.y,Math.min(b.w,b.h)*.55,0,7);cx.stroke()}
   }
+  for(const r of rings){cx.globalAlpha=Math.max(0,r.l);cx.strokeStyle='#ff7fa8';cx.lineWidth=6*r.l+1;cx.beginPath();cx.arc(r.x,r.y,r.r,0,7);cx.stroke()}
+  cx.globalAlpha=1;
+  if(mag){const m=mag.b;cx.globalAlpha=Math.min(1,mag.t*2);
+    cx.strokeStyle='#ff5c93';cx.lineWidth=4;cx.setLineDash([6,8]);cx.lineDashOffset=-t*60;
+    for(const o of bodies){if(o===m||o.isStatic||o.ice||(!m.rb&&o.lv!==m.lv))continue;if(Math.hypot(o.position.x-m.position.x,o.position.y-m.position.y)<300){cx.beginPath();cx.moveTo(o.position.x,o.position.y);cx.lineTo(m.position.x,m.position.y);cx.stroke()}}
+    cx.setLineDash([]);cx.beginPath();cx.arc(m.position.x,m.position.y,m.w*.55+Math.sin(t*20)*4,0,7);cx.stroke();cx.globalAlpha=1}
   for(const p of parts){cx.globalAlpha=Math.max(0,p.l);cx.fillStyle=p.c;cx.beginPath();cx.arc(p.x,p.y,4,0,7);cx.fill()}
   cx.globalAlpha=1;cx.textAlign='center';
   for(const p of pop){cx.globalAlpha=Math.min(1,p.l*2);cx.font='bold 22px system-ui,sans-serif';cx.lineWidth=5;cx.strokeStyle='#fff';cx.strokeText(p.txt,p.x,p.y);cx.fillStyle='#ff5c7a';cx.fillText(p.txt,p.x,p.y)}
