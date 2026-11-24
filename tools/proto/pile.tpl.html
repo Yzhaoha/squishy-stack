@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>原型③：捏捏罐子大挑战</title>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#fdeef6;font-family:system-ui,"PingFang SC","Microsoft YaHei",sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
+canvas{display:block;width:100vw;height:100vh}
+#ov{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(255,230,242,.6)}
+#ov.hide{display:none}
+.card{background:#fff;border-radius:22px;padding:22px 24px;max-width:340px;margin:16px;text-align:center;box-shadow:0 8px 30px rgba(220,90,140,.25);color:#7a3a55}
+.card h1{margin:0 0 8px;font-size:24px;color:#ff5c93}
+.card h2{margin:0 0 6px;font-size:15px;color:#c0708f;font-weight:600}
+.card p{margin:6px 0;font-size:15px;line-height:1.55;text-align:left}
+.card p.c{text-align:center}
+.card button{margin-top:12px;border:0;border-radius:999px;background:#ff6fa1;color:#fff;font-size:18px;font-weight:700;padding:12px 28px;cursor:pointer;box-shadow:0 4px 0 #e0457c}
+.card button.sec{background:#fff;color:#e0457c;box-shadow:0 0 0 2px #ffb3cc inset;font-size:15px;padding:9px 18px;margin-left:6px}
+.lvl{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.lvl button{margin:0;text-align:left;font-size:16px;padding:10px 18px}
+.lvl button small{display:block;font-weight:400;font-size:12px;opacity:.9}
+.chain{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:2px;margin:8px 0}
+.chain img{height:24px}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="ov"><div class="card" id="card"></div></div>
+<script>/*MATTER*/</script>
+<script>
+/*CHARS*/
+/*PROPS*/
+const {Engine,Bodies,Body,Composite,Vertices,Query}=Matter;
+const W=400,JH=540,HOLDY=JH+14,TRAYY=JH+70,BTNY=JH+146,TOP=-66,BOT=JH+200;
+const LVS=['mochi','bun','frog','berry','shiba','jelly','peng','bear','uni','gcapy'];
+const NAME=['麻薯','包子','青蛙','草莓','柴犬','果冻','企鹅','小熊','独角兽','巨型水豚'];
+const TRAY=7,HOLD_MAX=6;
+let SZK=1;
+function TSZ(lv){return (40+lv*5)*SZK}
+const IMG=LVS.map(k=>{const i=new Image();i.src=CHARS[k].u;return i});
+const DIM=[];   // darkened copies for covered pieces
+function dimImg(lv){
+  if(DIM[lv])return DIM[lv];const im=IMG[lv];if(!im.complete||!im.naturalWidth)return null;
+  const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;const g=c.getContext('2d');
+  g.drawImage(im,0,0);g.globalCompositeOperation='source-atop';g.fillStyle='rgba(70,40,70,.5)';g.fillRect(0,0,c.width,c.height);
+  return DIM[lv]=c;
+}
+const BG=new Image();BG.src=PROPS.bg;
+
+const LEVELS=[
+  {name:'第 1 关',sub:'热身：把罐子清空',seed:11,cap:2,G:1,target:13,wrap:0,
+   intro:'<p>罐子里塞满了捏捏。<b>点露在最上面的</b>（上面没压着东西的），它会飞进下面的<b>托盘</b>。</p><p>托盘里凑齐 <b>3 只同款</b>，会捏成一只<b>大一级</b>的，掉回罐子里。</p><p>托盘 <b>7 格满了就输</b>，罐子清空就赢。发灰的是被压住的，先拿上面的。</p>'},
+  {name:'第 2 关',sub:'真正的挑战',seed:7,cap:8,G:2,target:99,wrap:.7,size:.8,
+   intro:'<p class="c"><b>这关很难。</b></p><p>捏捏更多、种类更多，最底下还有不少包着<b>盲盒纸</b>，露出来才知道是谁。</p><p>三个道具每关各能用一次，用完还能再领一次：<br>✊ <b>捏一下</b>：把罐子震松，重新堆一遍<br>📤 <b>移出</b>：托盘里 3 只挪到上面暂放<br>↩ <b>撤回</b>：退回上一步</p><p class="c">通关送一只<b>金色巨型水豚</b>！</p>'},
+];
+
+const cv=document.getElementById('c'),cx=cv.getContext('2d');
+let cw,ch,sc,ox,oy,dpr;
+function resize(){dpr=Math.min(2,window.devicePixelRatio||1);cw=innerWidth;ch=innerHeight;cv.width=cw*dpr;cv.height=ch*dpr;sc=Math.min(cw/(W+24),ch/(BOT-TOP+12));ox=(cw-W*sc)/2;oy=(ch-(BOT-TOP)*sc)/2-TOP*sc}
+addEventListener('resize',resize);resize();
+
+let AC=null;
+function snd(f,d=.12,type='sine',v=.15,up=1.5){if(!AC)return;const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.setValueAtTime(f,t);o.frequency.exponentialRampToValueAtTime(f*up,t+d*.5);g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g).connect(AC.destination);o.start(t);o.stop(t+d)}
+function load(k,d){try{const v=localStorage.getItem('sqp_'+k);return v==null?d:JSON.parse(v)}catch(_){return d}}
+function save(k,v){try{localStorage.setItem('sqp_'+k,JSON.stringify(v))}catch(_){}}
+let done=load('pileDone',[]);
+
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+
+let eng,bodies,tray,hold,merges,spawnQ,parts,pop,rings,hist,state='menu',L,li=0,t=0,stars,uses,extra,revived,shake=0,toast='',toastT=0,loseT=0,total;
+
+function makeBody(lv,x,y,wrap){
+  const id=LVS[lv],w=TSZ(lv),C=CHARS[id];
+  const v=C.v.map(([a,b])=>({x:a*w,y:b*w}));
+  const c=Vertices.centre(v);
+  const b=Bodies.fromVertices(x+c.x,y+c.y,[v],{friction:.6,frictionStatic:.9,restitution:.05,density:.001});
+  b.lv=lv;b.w=w;b.h=w/C.ar;b.off={x:-c.x,y:-c.y};b.sq=0;b.sv=0;b.wrap=!!wrap;b.cov=false;
+  return b;
+}
+// build a solvable pile: start from G triples at the cap level, keep splitting a piece into 3 of the level below
+function genPile(Lv){
+  const r=rng(Lv.seed);
+  let items=[];for(let i=0;i<3*Lv.G;i++)items.push(Lv.cap);
+  while(items.length<Lv.target){
+    const c=items.map((v,i)=>v>0?i:-1).filter(i=>i>=0);if(!c.length)break;
+    const i=c[r()*c.length|0],v=items[i];items.splice(i,1,v-1,v-1,v-1);
+  }
+  for(let i=items.length-1;i>0;i--){const j=r()*(i+1)|0;[items[i],items[j]]=[items[j],items[i]]}
+  return {items,r};
+}
+function start(i){
+  li=i;L=LEVELS[i];SZK=L.size||1;
+  eng=Engine.create({positionIterations:8,velocityIterations:6});
+  const o={isStatic:true,friction:.4};
+  Composite.add(eng.world,[Bodies.rectangle(-25,JH/2-300,50,JH+600,o),Bodies.rectangle(W+25,JH/2-300,50,JH+600,o),Bodies.rectangle(W/2,JH+25,W+100,50,o)]);
+  bodies=[];tray=[];hold=[];merges=[];spawnQ=[];parts=[];pop=[];rings=[];hist=[];
+  stars=0;uses={shake:1,out:1,undo:1};extra={shake:1,out:1,undo:1};revived=false;loseT=0;toastT=0;t=0;
+  const {items,r}=genPile(L);total=items.length;
+  let cxp=10+r()*14,y=JH-24,n=items.length;
+  items.forEach((lv,k)=>{
+    const w=TSZ(lv);
+    if(cxp+w>W-8){cxp=6+r()*30;y-=40*SZK+r()*8}
+    const b=makeBody(lv,cxp+w/2,y,L.wrap&&k<n*.6&&r()<L.wrap);
+    Body.setAngle(b,(r()-.5)*.3);
+    Composite.add(eng.world,b);bodies.push(b);cxp+=w+2+r()*10;
+  });
+  for(let k=0;k<420;k++){Engine.update(eng,1000/60);upright()}
+  for(const b of bodies)Body.setVelocity(b,{x:0,y:0});
+  cover();state='play';hide();
+}
+function upright(){for(const b of bodies){let a=b.angle%(2*Math.PI);if(a>Math.PI)a-=2*Math.PI;if(a<-Math.PI)a+=2*Math.PI;Body.setAngularVelocity(b,b.angularVelocity*.9-a*.01)}}
+function cover(){
+  for(const b of bodies){
+    b.cov=false;
+    for(const o of bodies){
+      if(o===b||o.position.y>=b.position.y-4)continue;
+      const ovx=Math.min(b.bounds.max.x,o.bounds.max.x)-Math.max(b.bounds.min.x,o.bounds.min.x);
+      if(ovx>.25*Math.min(b.w,o.w)&&o.bounds.max.y>=b.bounds.min.y-3){b.cov=true;break}
+    }
+    if(!b.cov&&b.wrap){b.wrap=false;b.sv+=.25;burst(b.position.x,b.position.y,10,['#ffd1e3','#fff3a8','#c9b8ff']);pop.push({x:b.position.x,y:b.position.y-24,txt:NAME[b.lv]+'!',l:.9});snd(900,.1,'triangle',.08,1.3)}
+  }
+}
+function slotPos(i){return {x:9+26+i*55,y:TRAYY+30}}
+function holdPos(i){return {x:W/2+(i-(hold.length-1)/2)*58,y:HOLDY+22}}
+function addTray(it){
+  let idx=-1;for(let i=0;i<tray.length;i++)if(tray[i].lv===it.lv)idx=i;
+  if(idx<0)tray.push(it);else tray.splice(idx+1,0,it);
+  const same=tray.filter(x=>x.lv===it.lv&&!x.m);
+  if(same.length>=3){const g=same.slice(0,3);g.forEach(x=>x.m=true);merges.push({items:g,lv:it.lv,t:.38})}
+}
+function pick(b){
+  if(state!=='play'||b.cov||tray.length>=TRAY)return false;
+  Composite.remove(eng.world,b);bodies.splice(bodies.indexOf(b),1);
+  const it={lv:b.lv,x:b.position.x,y:b.position.y,s:1,from:b.position.x};
+  addTray(it);hist.push(it);
+  snd(520+b.lv*40,.09,'triangle',.1);
+  return true;
+}
+function doShake(){
+  for(const b of bodies){Body.setVelocity(b,{x:(Math.random()-.5)*9,y:-4-Math.random()*7});b.sv+=.3}
+  shake=10;rings.push({x:W/2,y:JH-60,r:20,l:1});snd(90,.4,'sine',.25,3);
+}
+function doOut(){
+  const free=HOLD_MAX-hold.length;const its=tray.filter(x=>!x.m).slice(0,Math.min(3,free));
+  if(!its.length)return false;
+  for(const it of its){tray.splice(tray.indexOf(it),1);hold.push(it)}
+  snd(700,.12,'triangle',.1,.8);return true;
+}
+function doUndo(){
+  const it=hist.pop();if(!it||!tray.includes(it)||it.m){return false}
+  tray.splice(tray.indexOf(it),1);
+  const b=makeBody(it.lv,Math.max(40,Math.min(W-40,it.from)),-30,false);Composite.add(eng.world,b);bodies.push(b);
+  snd(400,.12,'triangle',.1,.7);return true;
+}
+function useProp(k){
+  if(state!=='play')return;
+  if(uses[k]<=0){
+    if(extra[k]>0){extra[k]--;uses[k]++;toast='（正式版：看个广告再领一次）';toastT=1.8;snd(800,.1,'triangle',.08)}
+    return;
+  }
+  const ok=k==='shake'?(doShake(),true):k==='out'?doOut():doUndo();
+  if(ok)uses[k]--;else{toast=k==='out'?'托盘是空的':'没有可以撤回的';toastT=1.2}
+}
+function burst(x,y,n,cols){for(let i=0;i<n;i++){const a=Math.random()*7,s=2+Math.random()*4;parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-2,l:1,c:cols[i%cols.length]})}}
+
+let acc=0,last=performance.now();
+function tick(){Engine.update(eng,1000/60);upright()}
+function frame(now){
+  let dt=Math.min(.05,(now-last)/1000);last=now;
+  if(state==='play'||state==='win'||state==='lose'){
+    acc+=dt;let n=0;
+    while(acc>=1/60&&n<4){tick();acc-=1/60;n++}
+    if(n===4)acc=0;
+    step(dt);
+  }
+  draw();requestAnimationFrame(frame);
+}
+function step(dt){
+  t+=dt;toastT-=dt;shake*=Math.pow(.02,dt);
+  cover();
+  for(const b of bodies){b.sv+=(-b.sq*160-b.sv*9)*dt;b.sq+=b.sv*dt*4;b.sq=Math.max(-.25,Math.min(.4,b.sq))}
+  // tray / hold item motion
+  tray.forEach((it,i)=>{const p=slotPos(i);it.x+=(p.x-it.x)*Math.min(1,dt*14);it.y+=(p.y-it.y)*Math.min(1,dt*14)});
+  hold.forEach((it,i)=>{const p=holdPos(i);it.x+=(p.x-it.x)*Math.min(1,dt*14);it.y+=(p.y-it.y)*Math.min(1,dt*14)});
+  for(let k=merges.length-1;k>=0;k--){
+    const m=merges[k];m.t-=dt;
+    const mid=m.items[1];for(const it of m.items){it.s=Math.max(.3,m.t/.38);if(m.t<.2){it.x+=(mid.x-it.x)*Math.min(1,dt*20)}}
+    if(m.t<=0){
+      for(const it of m.items)tray.splice(tray.indexOf(it),1);
+      burst(mid.x,mid.y,14,['#ff9fc0','#ffd36b','#fff','#a8e6ff']);
+      if(m.lv>=L.cap){stars++;pop.push({x:mid.x,y:mid.y-30,txt:'⭐ '+NAME[m.lv]+' ×3 毕业！',l:1.3});snd(990,.4,'triangle',.18)}
+      else{spawnQ.push({lv:m.lv+1,d:.3});pop.push({x:mid.x,y:mid.y-30,txt:'合成 '+NAME[m.lv+1]+'！',l:1});snd(340*Math.pow(1.12,m.lv),.2,'sine',.18)}
+      merges.splice(k,1);
+    }
+  }
+  for(let k=spawnQ.length-1;k>=0;k--){const s=spawnQ[k];s.d-=dt;if(s.d<=0){const w=TSZ(s.lv);const b=makeBody(s.lv,w/2+10+Math.random()*(W-w-20),-40,false);b.sq=.3;Composite.add(eng.world,b);bodies.push(b);spawnQ.splice(k,1)}}
+  for(const p of parts){p.x+=p.vx;p.y+=p.vy;p.vy+=.2;p.l-=dt*1.6}
+  parts=parts.filter(p=>p.l>0);
+  for(const p of pop){p.y-=dt*40;p.l-=dt}pop=pop.filter(p=>p.l>0);
+  for(const r of rings){r.r+=dt*600;r.l-=dt*2}rings=rings.filter(r=>r.l>0);
+  if(state!=='play')return;
+  if(tray.length>=TRAY&&!merges.length){loseT+=dt;if(loseT>.35){state='lose';snd(180,.5,'sawtooth',.1,.6);setTimeout(()=>show('lose'),500)}}else loseT=0;
+  if(!bodies.length&&!tray.length&&!hold.length&&!merges.length&&!spawnQ.length){
+    state='win';if(!done.includes(li)){done.push(li);save('pileDone',done)}
+    snd(660,.2,'triangle',.15);setTimeout(()=>snd(880,.3,'triangle',.15),150);setTimeout(()=>snd(1100,.4,'triangle',.15),300);
+    setTimeout(()=>show('win'),700);
+  }
+}
+
+// ---- drawing ----
+function rr(x,y,w,h,r){cx.beginPath();cx.moveTo(x+r,y);cx.arcTo(x+w,y,x+w,y+h,r);cx.arcTo(x+w,y+h,x,y+h,r);cx.arcTo(x,y+h,x,y,r);cx.arcTo(x,y,x+w,y,r);cx.closePath()}
+function drawPiece(b){
+  cx.save();cx.translate(b.position.x,b.position.y);cx.rotate(b.angle);cx.translate(b.off.x,b.off.y);
+  cx.scale(1+b.sq*.6,1-b.sq);
+  const w=b.w,h=b.h;
+  if(b.wrap){
+    cx.fillStyle=b.cov?'#cdb6c8':'#ffd6e8';rr(-w/2,-h/2,w,h,10);cx.fill();
+    cx.fillStyle=b.cov?'#b39aae':'#ffb3d0';cx.fillRect(-4,-h/2,8,h);cx.fillRect(-w/2,-4,w,8);
+    cx.fillStyle=b.cov?'#8f7a8c':'#ff6fa1';cx.font='bold '+Math.round(h*.5)+'px system-ui';cx.textAlign='center';cx.textBaseline='middle';cx.fillText('?',0,1);cx.textBaseline='alphabetic';
+  }else{
+    const im=b.cov?dimImg(b.lv):IMG[b.lv];
+    if(im&&(im.width||im.naturalWidth))cx.drawImage(im,-w/2,-h/2,w,h);
+  }
+  cx.restore();
+}
+function drawIcon(lv,x,y,s,maxW,maxH){
+  const im=IMG[lv];if(!im.complete)return;const w=TSZ(lv),h=w/CHARS[LVS[lv]].ar,k=Math.min(maxW/w,maxH/h)*s;
+  cx.drawImage(im,x-w*k/2,y-h*k/2,w*k,h*k);
+}
+const BTNS=[{k:'shake',l:'✊ 捏一下'},{k:'out',l:'📤 移出'},{k:'undo',l:'↩ 撤回'}];
+function btnRect(i){return {x:W/2+(i-1)*134-62,y:BTNY,w:124,h:44}}
+function draw(){
+  cx.setTransform(dpr,0,0,dpr,0,0);
+  if(BG.complete&&BG.naturalWidth){const s=Math.max(cw/BG.naturalWidth,ch/BG.naturalHeight),bw=BG.naturalWidth*s,bh=BG.naturalHeight*s;cx.drawImage(BG,(cw-bw)/2,(ch-bh)/2,bw,bh)}
+  else{cx.fillStyle='#fdeef6';cx.fillRect(0,0,cw,ch)}
+  if(state==='menu')return;
+  const shx=(Math.random()-.5)*shake,shy=(Math.random()-.5)*shake;
+  cx.setTransform(dpr*sc,0,0,dpr*sc,dpr*(ox+shx*sc),dpr*(oy+shy*sc));
+  // jar
+  cx.fillStyle='rgba(255,255,255,.55)';rr(-8,-14,W+16,JH+22,24);cx.fill();
+  cx.lineWidth=6;cx.strokeStyle='rgba(255,140,180,.85)';rr(-8,-14,W+16,JH+22,24);cx.stroke();
+  cx.save();rr(-6,-200,W+12,JH+206,22);cx.clip();
+  for(const b of bodies)if(b.cov)drawPiece(b);
+  for(const b of bodies)if(!b.cov)drawPiece(b);
+  cx.restore();
+  for(const r of rings){cx.globalAlpha=Math.max(0,r.l);cx.strokeStyle='#ff7fa8';cx.lineWidth=6*r.l+1;cx.beginPath();cx.arc(r.x,r.y,r.r,0,7);cx.stroke()}
+  cx.globalAlpha=1;
+  // hold row
+  if(hold.length){cx.fillStyle='rgba(255,255,255,.7)';const hw=hold.length*58+10;rr(W/2-hw/2,HOLDY,hw,44,14);cx.fill();
+    hold.forEach(it=>drawIcon(it.lv,it.x,it.y,1,48,36))}
+  // tray
+  cx.fillStyle='rgba(255,255,255,.85)';rr(3,TRAYY,W-6,60,16);cx.fill();
+  cx.lineWidth=4;cx.strokeStyle=tray.length>=TRAY-1?'#ff2d55':'#ffa3c4';rr(3,TRAYY,W-6,60,16);cx.stroke();
+  for(let i=0;i<TRAY;i++){const p=slotPos(i);cx.fillStyle='rgba(255,200,222,.35)';rr(p.x-25,p.y-25,50,50,10);cx.fill()}
+  for(const it of tray)drawIcon(it.lv,it.x,it.y,it.s||1,48,42);
+  // buttons
+  BTNS.forEach((B,i)=>{const r=btnRect(i),u=uses[B.k],e=extra[B.k];
+    cx.fillStyle=u>0?'#ff7fab':e>0?'#ffc0d6':'#e6d0da';rr(r.x,r.y,r.w,r.h,22);cx.fill();
+    cx.fillStyle='#fff';cx.font='bold 16px system-ui,sans-serif';cx.textAlign='center';
+    cx.fillText(u>0?B.l:e>0?'📺 再领一次':B.l,r.x+r.w/2,r.y+28);
+    if(u>0){cx.fillStyle='#ff3d7a';cx.beginPath();cx.arc(r.x+r.w-6,r.y+4,10,0,7);cx.fill();cx.fillStyle='#fff';cx.font='bold 12px system-ui';cx.fillText(u,r.x+r.w-6,r.y+8)}});
+  // effects
+  for(const p of parts){cx.globalAlpha=Math.max(0,p.l);cx.fillStyle=p.c;cx.beginPath();cx.arc(p.x,p.y,4,0,7);cx.fill()}
+  cx.globalAlpha=1;cx.textAlign='center';
+  for(const p of pop){cx.globalAlpha=Math.min(1,p.l*2);cx.font='bold 20px system-ui,sans-serif';cx.lineWidth=5;cx.strokeStyle='#fff';cx.strokeText(p.txt,p.x,p.y);cx.fillStyle='#ff4d85';cx.fillText(p.txt,p.x,p.y)}
+  cx.globalAlpha=1;
+  // HUD
+  cx.font='bold 20px system-ui,sans-serif';cx.lineWidth=5;cx.strokeStyle='#fff';cx.textAlign='left';
+  cx.strokeText(L.name,4,-30);cx.fillStyle='#d94c80';cx.fillText(L.name,4,-30);
+  cx.textAlign='right';const s='罐子里还剩 '+bodies.length+' 只';cx.font='bold 16px system-ui,sans-serif';cx.strokeText(s,W-4,-30);cx.fillStyle='#b0507a';cx.fillText(s,W-4,-30);
+  if(toastT>0){cx.textAlign='center';cx.font='bold 17px system-ui,sans-serif';cx.lineWidth=5;cx.strokeText(toast,W/2,TRAYY-10);cx.fillStyle='#ff3d7a';cx.fillText(toast,W/2,TRAYY-10)}
+}
+
+// ---- UI ----
+const ov=document.getElementById('ov'),card=document.getElementById('card');
+function hide(){ov.classList.add('hide')}
+function chain(n){return '<div class="chain">'+LVS.slice(0,n).map((k,i)=>'<img src="'+CHARS[k].u+'" style="height:'+(18+i*2.4)+'px">').join('<span>→</span>')+'</div>'}
+function unlock(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(_){}}}
+function show(k){
+  ov.classList.remove('hide');
+  let h='';
+  if(k==='menu'){
+    h='<h1>捏捏罐子大挑战</h1><h2>试玩版 · 2 关</h2><p class="c">3 只同款 → 捏成大一级的</p>'+chain(4)+'<div class="lvl">'+LEVELS.map((l,i)=>'<button data-l="'+i+'">'+l.name+(done.includes(i)?' ✓':'')+'<small>'+l.sub+'</small></button>').join('')+'</div>';
+    card.innerHTML=h;card.querySelectorAll('[data-l]').forEach(b=>b.onclick=e=>{e.stopPropagation();unlock();show('intro:'+b.dataset.l)});return;
+  }
+  if(k.startsWith('intro:')){
+    const i=+k.slice(6),l=LEVELS[i];
+    h='<h1>'+l.name+'</h1><h2>'+l.sub+'</h2>'+l.intro+'<button id="b">开始</button><button class="sec" id="m">选关</button>';
+    card.innerHTML=h;document.getElementById('b').onclick=e=>{e.stopPropagation();unlock();start(i)};
+  }else if(k==='win'){
+    h=li===0?'<h1>过关！</h1><p class="c">热身完成。下一关才是真正的挑战…</p><button id="b">挑战第 2 关</button><button class="sec" id="m">选关</button>'
+      :'<h1>你过了第 2 关！</h1><p class="c">获得：金色巨型水豚</p><div class="chain"><img src="'+CHARS.gcapy.u+'" style="height:80px"></div><button id="r">再玩一次</button><button class="sec" id="m">选关</button>';
+    card.innerHTML=h;const b=document.getElementById('b');if(b)b.onclick=e=>{e.stopPropagation();show('intro:1')};
+  }else{
+    h='<h1>托盘满了…</h1><p class="c">罐子里还剩 '+bodies.length+' 只（一共 '+total+' 只）</p>'+(!revived?'<button id="v">复活：挪出 3 只继续</button><p class="c" style="font-size:12px;opacity:.7">（正式版：看个广告复活）</p>':'')+'<button class="sec" id="r">重来</button><button class="sec" id="m">选关</button>';
+    card.innerHTML=h;const v=document.getElementById('v');
+    if(v)v.onclick=e=>{e.stopPropagation();revived=true;const its=tray.filter(x=>!x.m).slice(0,3);for(const it of its){tray.splice(tray.indexOf(it),1);hold.push(it)}if(hold.length>HOLD_MAX)hold.length=HOLD_MAX;state='play';loseT=0;hide()};
+  }
+  const r=document.getElementById('r');if(r)r.onclick=e=>{e.stopPropagation();start(li)};
+  const m=document.getElementById('m');if(m)m.onclick=e=>{e.stopPropagation();show('menu')};
+}
+function toW(e){return {x:(e.clientX-ox)/sc,y:(e.clientY-oy)/sc}}
+function inR(p,r,pad=6){return p.x>=r.x-pad&&p.x<=r.x+r.w+pad&&p.y>=r.y-pad&&p.y<=r.y+r.h+pad}
+cv.addEventListener('pointerdown',e=>{e.preventDefault();if(state!=='play')return;const p=toW(e);
+  for(let i=0;i<3;i++)if(inR(p,btnRect(i))){useProp(BTNS[i].k);return}
+  for(let i=0;i<hold.length;i++){const q=holdPos(i);if(Math.abs(p.x-q.x)<28&&Math.abs(p.y-q.y)<26){
+    if(tray.length>=TRAY){toast='托盘满了';toastT=1;return}
+    const it=hold.splice(i,1)[0];it.m=false;addTray(it);snd(560,.08,'triangle',.08);return}}
+  if(p.y>JH+6)return;
+  let hit=Query.point(bodies,p).map(b=>b.parent);
+  let b=hit.find(b=>!b.cov)||hit[0];
+  if(!b){let bd=1e9;for(const o of bodies){const d=Math.hypot(o.position.x-p.x,o.position.y-p.y)-Math.min(o.w,o.h)/2;if(d<bd){bd=d;b=o}}if(bd>14)b=null}
+  if(!b)return;
+  if(b.cov){b.sv+=.15;toast='被压住了，先拿上面的';toastT=1;snd(200,.08,'square',.05);return}
+  if(tray.length>=TRAY)return;
+  pick(b);
+});
+show('menu');
+window.__g={get state(){return state},start,pick,useProp,get bodies(){return bodies},get tray(){return tray},get hold(){return hold},get merges(){return merges},get spawnQ(){return spawnQ},get total(){return total},get top(){return Math.min(...bodies.map(b=>b.bounds.min.y))},step:()=>{tick();step(1/60)},LEVELS,genPile,unhold:i=>{if(tray.length<TRAY&&hold[i]){const it=hold.splice(i,1)[0];it.m=false;addTray(it)}},revive:()=>{revived=true;const its=tray.filter(x=>!x.m).slice(0,3);for(const it of its){tray.splice(tray.indexOf(it),1);hold.push(it)}state='play';loseT=0}};
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

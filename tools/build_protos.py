@@ -92,3 +92,4 @@ def build(tpl, out, ids, bg):
 if __name__ == '__main__':
     build('physics.tpl.html', 'proto-physics.html', PHYS, 'bg_pals')
     build('merge.tpl.html', 'proto-merge.html', MERGE, 'bg_cafe')
+    build('pile.tpl.html', 'proto-pile.html', MERGE, 'bg_dream')
