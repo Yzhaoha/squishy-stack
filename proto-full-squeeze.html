@@ -11,11 +11,11 @@
 header{text-align:center}h1{margin:0;font-size:clamp(19px,5vw,29px);font-weight:900}header p{margin:3px 0 0;font-size:clamp(12px,3vw,15px)}
 .progress{display:flex;justify-content:space-between;gap:8px;font-size:14px;font-weight:750;padding:0 5px}
 .window{display:block;width:100%;border:3px solid #fff7fb;border-radius:18px;overflow:hidden;background:#ffedf6;box-shadow:0 2px 0 #cf82ac}
-canvas{display:block;width:100%;aspect-ratio:400/267;max-height:56dvh;touch-action:pan-y}
+canvas{display:block;width:100%;aspect-ratio:400/267;max-height:56dvh;touch-action:none;cursor:grab}
 .controls{display:flex;gap:8px}
 button{font:inherit;min-height:48px;cursor:pointer;border-radius:16px;border:2px solid #fff8fc;font-weight:800;color:#57213d;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-#squeeze{flex:1;background:#fa84b1;box-shadow:0 4px 0 #c95787}#squeeze:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 #c95787}
-#squeeze:disabled{cursor:default;background:#f7b9d2;box-shadow:0 4px 0 #ce8dac}#reset{background:#fff1f8;padding:0 14px}
+canvas:active{cursor:grabbing}.controls{justify-content:flex-end}
+#reset{background:#fff1f8;padding:0 14px}
 button:focus-visible{outline:3px solid #79426b;outline-offset:3px}
 #hint{text-align:center;font-size:13px;min-height:2em;margin:3px 0 0}
 @media (orientation:landscape) and (max-height:520px){
@@ -30,10 +30,10 @@ button:focus-visible{outline:3px solid #79426b;outline-offset:3px}
 </head>
 <body>
 <main class="machine" aria-label="捏捏叠叠乐：满仓挤合">
-<header><h1>捏捏合成机</h1><p>开局已满仓，只按「捏一下」。同款碰撞会合成。</p></header>
+<header><h1>捏捏合成机</h1><p>按住一只捏捏，往同款身上挤。</p></header>
 <div class="progress"><span id="remaining"></span><span id="presses"></span></div>
-<div class="window"><canvas id="view" aria-label="待合成玩具，不需要点击玩具"></canvas></div>
-<div class="controls"><button id="squeeze" type="button">捏一下</button><button id="reset" type="button">重开</button></div>
+<div class="window"><canvas id="view" aria-label="按住玩偶并拖向同款"></canvas></div>
+<div class="controls"><button id="reset" type="button">重开</button></div>
 <p id="hint" role="status"></p>
 </main>
 <script>/*!
@@ -58,7 +58,7 @@ const PACK=[
   [0,1,2,1,2],
   [2,0,1,2,0],
 ];
-const BTN=document.getElementById('squeeze'),RESET=document.getElementById('reset'),
+const RESET=document.getElementById('reset'),
   REM=document.getElementById('remaining'),PRES=document.getElementById('presses'),HINT=document.getElementById('hint');
 const CV=document.getElementById('view'),CTX=CV.getContext('2d');
 const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
@@ -72,7 +72,9 @@ function makeToy(level,x,y,epoch){
   b.kind=level;b.w=w;b.h=w/art.ar;b.offset=c;b.squeezeScale=1;b.epoch=epoch;b.no=seq++;b.merging=false;
   return b;
 }
+let gesture=null, selected=null;
 function restart(){
+  gesture=null;selected=null;
   engine=Engine.create({positionIterations:10,velocityIterations:8});engine.gravity.y=.64;
   const wall={isStatic:true,friction:.1};
   Composite.add(engine.world,[
@@ -88,65 +90,53 @@ function restart(){
     });
   });
   const contact=ev=>{
-    if(wave<7||wave>=WAVE)return;
+    if(!selected)return;
     for(const {bodyA,bodyB} of ev.pairs){
       const a=bodyA.parent,b=bodyB.parent;
+      if(a!==selected&&b!==selected)continue;
       if(a.kind===undefined||a.kind!==b.kind||a.epoch===used||b.epoch===used||a.merging||b.merging||a.kind>=IDS.length-1)continue;
       a.merging=b.merging=true;contactCount++;queue.push([a,b]);
     }
   };
   Events.on(engine,'collisionStart',contact);Events.on(engine,'collisionActive',contact);
-  sync('试试捏一下，看整堆怎么动。');
+  sync('挑一只玩偶，按住它试试。');
 }
 function sync(message){
   REM.textContent=win?'合成完成！':'剩余 '+toys.length+' 只';
   PRES.textContent='捏了 '+used+' 次';
-  BTN.disabled=win||wave>=0;
-  BTN.textContent=win?'完成！':wave>=0?'合成中…':'捏一下';
   if(message!==undefined)HINT.textContent=message;
 }
-function squeeze(){
-  if(win||wave>=0)return;
-  used++;wave=0;sync('挤一挤，看同款相碰。');
-  for(const b of toys){
-    const side=b.position.x<W/2?1:-1;
-    Body.setVelocity(b,{x:side*(2.9+(b.no%5)*.48),y:-2.8-(b.no%4)*.52});
-    Body.setAngularVelocity(b,side*(.08+(b.no%3)*.025));
-  }
+function point(e){
+  const r=CV.getBoundingClientRect();
+  return {x:clamp((e.clientX-r.left)*W/r.width,0,W),y:clamp((e.clientY-r.top)*H/r.height,0,H)};
 }
-function pairs(){
-  const candidates=[];
-  for(let i=0;i<toys.length;i++){
-    const a=toys[i];if(a.epoch===used||a.kind===IDS.length-1)continue;
-    for(let j=i+1;j<toys.length;j++){
-      const b=toys[j];if(a.kind!==b.kind||b.epoch===used)continue;
-      candidates.push([a,b,Math.hypot(a.position.x-b.position.x,a.position.y-b.position.y)/a.w]);
-    }
-  }
-  candidates.sort((a,b)=>a[2]-b[2]||a[0].no-b[0].no||a[1].no-b[1].no);
-  const usedBody=new Set(), out=[];
-  for(const [a,b] of candidates)if(!usedBody.has(a)&&!usedBody.has(b)){
-    usedBody.add(a);usedBody.add(b);out.push([a,b]);
-  }
-  return out;
+CV.addEventListener('pointerdown',e=>{
+  if(win||gesture||e.button!==0)return;
+  const p=point(e),body=Matter.Query.point(toys,p).pop();
+  if(!body)return;
+  CV.setPointerCapture(e.pointerId);
+  selected=body;used++;wave=0;
+  gesture={id:e.pointerId,p,dx:body.position.x-p.x,dy:body.position.y-p.y};
+  sync('捏住了'+NAMES[body.kind]+'，拖向另一只'+NAMES[body.kind]+'。');
+});
+CV.addEventListener('pointermove',e=>{
+  if(gesture?.id===e.pointerId)gesture.p=point(e);
+});
+function release(e){
+  if(gesture?.id!==e.pointerId)return;
+  gesture=null;wave=0;
+  sync('再挑一只捏捏。');
 }
+for(const event of ['pointerup','pointercancel','lostpointercapture'])CV.addEventListener(event,release);
 function tick(){
   if(wave<0||win)return;
-  const breath=wave<12?1-.30*Math.sin(wave/12*Math.PI/2):.70+.30*clamp((wave-12)/55,0,1);
-  for(const b of toys){
-    const now=b.epoch===used?1:breath;
-    if(Math.abs(now-b.squeezeScale)>.001){Body.scale(b,now/b.squeezeScale,now/b.squeezeScale);b.squeezeScale=now}
-    const a=Math.atan2(Math.sin(b.angle),Math.cos(b.angle));
-    Body.setAngularVelocity(b,b.angularVelocity*.88-a*.026);
-  }
-  // Attraction affects velocities only. Creation/removal is exclusively through Matter contact pairs.
-  if(wave>=7&&wave<65)for(const [a,b] of pairs()){
-    const dx=b.position.x-a.position.x,dy=b.position.y-a.position.y,d=Math.max(1,Math.hypot(dx,dy));
-    const ax=dx/d,ay=dy/d,k=wave>=29?2.2:1.35;
-    for(const [p,s] of [[a,1],[b,-1]])Body.setVelocity(p,{
-      x:clamp(p.velocity.x*.77+ax*k*s,-9,9),
-      y:clamp(p.velocity.y*.64+ay*k*s-(wave<51?.66:0),-9,9)
+  if(gesture&&selected){
+    const b=selected,g=gesture;
+    Body.setVelocity(b,{
+      x:clamp((g.p.x+g.dx-b.position.x)*.35,-12,12),
+      y:clamp((g.p.y+g.dy-b.position.y)*.35-.18,-12,12)
     });
+    Body.setAngularVelocity(b,b.angularVelocity*.7);
   }
   Engine.update(engine,DT);
   if(queue.length){
@@ -154,6 +144,7 @@ function tick(){
       const n=a.kind+1,r=SIZE[n]/2;
       const x=clamp((a.position.x+b.position.x)/2,r,W-r);
       const y=clamp((a.position.y+b.position.y)/2,SIZE[n]/4,H-SIZE[n]/3);
+      selected=null;gesture=null;wave=0;
       Composite.remove(engine.world,[a,b]);
       toys=toys.filter(p=>p!==a&&p!==b);
       const merged=makeToy(n,x,y,used);
@@ -166,7 +157,7 @@ function tick(){
       win=true;sync('满仓合成一只企鹅！你用了 '+used+' 次。');
     }else sync();
   }
-  if(++wave>=WAVE&&!win){wave=-1;sync('继续捏，把剩下的同款合起来。')}
+  if(!gesture&&++wave>=WAVE&&!win){wave=-1;selected=null;sync('挑一只玩偶，往同款身上挤。')}
 }
 function draw(){
   const d=Math.min(2,devicePixelRatio||1),r=CV.getBoundingClientRect();
@@ -181,6 +172,7 @@ function draw(){
     const img=IMG[b.kind];if(!img.complete||!img.naturalWidth)continue;
     CTX.save();CTX.translate(b.position.x,b.position.y);CTX.rotate(b.angle);
     const k=b.squeezeScale;CTX.translate(-b.offset.x*k,-b.offset.y*k);
+    if(gesture&&b===selected)CTX.scale(1.13,.84);
     CTX.scale(k,k);CTX.shadowColor='#67395855';CTX.shadowBlur=3;CTX.shadowOffsetY=3;
     CTX.drawImage(img,-b.w/2,-b.h/2,b.w,b.h);CTX.restore();
   }
@@ -191,10 +183,7 @@ function draw(){
     CTX.arc(s.x,s.y,12+(reduced?0:s.age*1.0),0,Math.PI*2);CTX.stroke();
   }
   CTX.globalAlpha=1;CTX.restore();
-  if(wave>=0&&wave<20&&!reduced){
-    const k=Math.sin(wave/20*Math.PI),w=8+11*k;
-    CTX.fillStyle='#ef84ae';CTX.fillRect(0,0,w,H);CTX.fillRect(W-w,0,w,H);
-  }
+
   if(win){
     CTX.fillStyle='#fff5fbe8';CTX.fillRect(0,18,W,52);
     CTX.textAlign='center';CTX.font='bold 23px system-ui';CTX.fillStyle='#6f274e';
@@ -207,10 +196,10 @@ function frame(t){
   while(acc>=DT){tick();for(const s of spark)s.age++;spark=spark.filter(s=>s.age<=38);acc-=DT}
   draw();requestAnimationFrame(frame);
 }
-BTN.addEventListener('click',squeeze);RESET.addEventListener('click',restart);
+RESET.addEventListener('click',restart);
 restart();
 if(new URLSearchParams(location.search).has('test'))window.__fullSqueeze={
-  advance(){while(wave>=0&&wave<WAVE&&!win)tick()},
+  advance(){while(!gesture&&wave>=0&&wave<WAVE&&!win)tick()},
   snapshot(){return {state:win?'win':wave>=0?'moving':'idle',count:toys.length,used,merges,contactCount,
     mass:toys.reduce((n,b)=>n+(1<<b.kind),0),kinds:toys.map(b=>b.kind),
     frame:toys.map(b=>[b.no,b.kind,b.position.x,b.position.y,b.bounds.min,b.bounds.max])}}
