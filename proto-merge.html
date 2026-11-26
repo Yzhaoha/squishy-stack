@@ -52,8 +52,8 @@ const BG=new Image();BG.src=PROPS.bg;
 const LEVELS=[
   {name:'第 1 关',sub:'合出一只柴犬',goal:{make:4},pool:4,sq:3,
    intro:'<p>左右移动瞄准，松手放下。两只<b>一样的</b>碰到会合成更大的一只。</p><p><b>新本领「捏一下」</b>：罐子里卡住了，或者两只同款差一点没碰上？点右下角的 <b>✊ 捏一下</b>，再点一只捏捏——它会「噗」地缩一下把周围炸开，然后<b>把附近同款的吸过来</b>。每合成 5 次补 1 次。</p>'},
-  {name:'第 2 关 · 半仓开局',sub:'合出一只小熊',goal:{make:7},pool:5,sq:3,rainbow:6,
-   intro:'<p>每隔几只会来一颗 <b>🌈 彩虹捏捏</b>：它碰到谁就和谁合成，直接把那只升一级。</p><p>把它丢在最想升级的那只上面！</p>'},
+  {name:'第 2 关 · 泡泡架',sub:'合出一只小熊',goal:{make:7},pool:5,sq:3,rainbow:6,
+   intro:'<p>把彩虹丢向左边的草莓，它会变成柴犬，正好接下一手。也可以瞄准右边的柴犬，直接合出果冻。</p><p>碰到的泡泡会破，里面的捏捏会掉下来。看看你能把哪一边接起来。</p>'},
   {name:'第 3 关 · 冰冻捏捏',sub:'25 只以内，把 4 只冰冻的全部解冻',goal:{thaw:1},pool:4,sq:4,limit:25,
    ice:[[46,2],[128,1],[222,3],[336,2]],
    intro:'<p>罐底有 4 只被 <b>❄ 冻住</b> 的捏捏，冻住时不能合成，也不会动。</p><p>在它旁边合成两次就能解冻；<b>捏一下</b>冰块也能直接敲掉一层冰。</p>'},
@@ -131,15 +131,21 @@ function start(i){
   sqN=L.sq;sqMeter=0;outT=0;mag=null;shake=0;rings=[];sqMode=false;iceLeft=0;hint='';hintT=0;
   cur=i===0?0:rnd();nxt=i===0?0:rnd();
   if(i===1){
-    cur=1;nxt=3;
-    const mirror=Math.random()<.5;
-    const layout=[[.11,2,0],[.28,1,0],[.45,4,0],[.64,0,0],[.77,1,0],[.92,3,0],[.45,0,1],[.59,2,1]];
-    for(const [fraction,lv,row] of layout){
-      const x=Math.max(SZ[lv]/2,Math.min(W-SZ[lv]/2,(mirror?1-fraction:fraction)*W));
-      const b=makeBody(lv,x,H-SZ[lv]/CHARS[LVS[lv]].ar/2-row*SZ[4]*.85-2);
-      Composite.add(eng.world,b);bodies.push(b);
-    }
-    for(let frame=0;frame<110;frame++)Engine.update(eng,1000/60);
+    cur=RB;nxt=4;
+    // Three staggered rows of bubble-wrapped toys. The two exposed prizes
+    // give the opening rainbow different upgrades before the next shiba.
+    const rows=[[0,2,1,3,0],[2,1,0,2],[3,1,4]];
+    const top=Math.max(LINE+SZ[4]*.65,H*.47);
+    rows.forEach((row,index)=>{
+      const y=H-SZ[4]*.48-(H-SZ[4]*.48-top)*index/2;
+      row.forEach((lv,j)=>{
+        const x=(j+.5)*W/row.length;
+        const toy=makeBody(lv,x,y);
+        toy.wrapped=true;
+        Body.setStatic(toy,true);
+        Composite.add(eng.world,toy);bodies.push(toy);
+      });
+    });
   }
   for(const [x,lv] of (L.ice||[])){
     const b=makeBody(lv,x*W/400,H-SZ[lv]/CHARS[LVS[lv]].ar/2-2);
@@ -154,6 +160,10 @@ function start(i){
         for(const X of [A,B])if(!X.isStatic)X.sv+=Math.min(rv,8)*.03;
       }
       if(A.lv===undefined||B.lv===undefined||A.dead||B.dead||A.ice||B.ice)continue;
+      for(const toy of [A,B])if(toy.wrapped){
+        toy.wrapped=false;Body.setStatic(toy,false);
+        burst(toy.position.x,toy.position.y,6,['#fff','#a5dce9']);
+      }
       if(A.rb&&B.rb)continue;
       if(A.rb||B.rb){const X=A.rb?B:A;A.dead=B.dead=true;queue.push([A,B,X.lv+1,X])}
       else if(A.lv===B.lv){A.dead=B.dead=true;queue.push([A,B,A.lv+1,null])}
@@ -341,7 +351,13 @@ function draw(){
     cx.strokeStyle='rgba(255,255,255,.8)';cx.lineWidth=2;cx.setLineDash([4,8]);cx.beginPath();cx.moveTo(ax,cy);cx.lineTo(ax,H);cx.stroke();cx.setLineDash([]);
     if(cool<=0&&left()>0)drawImg(cur,ax,cy,0,Math.sin(t*8)*.03);
   }
-  for(const b of bodies){drawImg(b.lv,b.position.x,b.position.y,b.angle,b.sq,b.off,b.k);if(b.ice)drawIce(b)}
+  for(const b of bodies){
+    if(b.wrapped){
+      cx.beginPath();cx.ellipse(b.position.x,b.position.y,b.w*.53,b.h*.55,0,0,Math.PI*2);
+      cx.fillStyle='rgba(191,236,255,.30)';cx.fill();
+      cx.strokeStyle='#a4d6df';cx.lineWidth=2;cx.stroke();
+    }
+    drawImg(b.lv,b.position.x,b.position.y,b.angle,b.sq,b.off,b.k);if(b.ice)drawIce(b)}
   if(sqMode){
     const pulse=.5+.5*Math.sin(t*8);
     for(const b of bodies){cx.strokeStyle='rgba(255,92,147,'+(.25+pulse*.35)+')';cx.lineWidth=3;cx.beginPath();cx.arc(b.position.x,b.position.y,Math.min(b.w,b.h)*.55,0,7);cx.stroke()}
